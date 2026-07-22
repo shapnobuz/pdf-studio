@@ -54,10 +54,10 @@ npx @tauri-apps/cli@latest signer generate -w $HOME/.tauri/pdfstudio.key
 ## ধাপ ৫ — প্রথম release বানাও
 
 ```powershell
-git tag v2.7.0
+git tag v3.10.1
 git push --tags
 ```
-GitHub repo-র **Actions** ট্যাবে গিয়ে দেখো build চলছে (~১০-১৫ মিনিট প্রথমবার)। শেষ হলে **Releases**-এ `v2.7.0` দেখা যাবে, সাথে installer (`.exe`) আর `latest.json`। এই installer-টাই এখন সবাইকে দাও — এর পর থেকে সব auto-update এখান থেকেই চলবে।
+GitHub repo-র **Actions** ট্যাবে গিয়ে দেখো build চলছে (~১০-১৫ মিনিট প্রথমবার)। শেষ হলে **Releases**-এ `v3.10.1` দেখা যাবে, সাথে installer (`.exe`) আর `latest.json`। এই installer-টাই এখন সবাইকে দাও — এর পর থেকে সব auto-update এখান থেকেই চলবে।
 
 ---
 
@@ -65,12 +65,12 @@ GitHub repo-র **Actions** ট্যাবে গিয়ে দেখো buil
 
 আমি (Claude) যখন নতুন `pdf-studio.html` দেব:
 1. সেটা `pdf-studio-desktop/dist/index.html`-এ বসাও (পুরনোটা বদলে দাও)
-2. `src-tauri/tauri.conf.json` আর `src-tauri/Cargo.toml`-এ version number বাড়াও (যেমন `2.7.0` → `2.8.0`) — **দুই জায়গাতেই বাড়াতে হবে**
+2. `src-tauri/tauri.conf.json` আর `src-tauri/Cargo.toml`-এ version number বাড়াও (যেমন `3.10.1` → `3.10.2`) — **দুই জায়গাতেই বাড়াতে হবে**
 3.
 ```powershell
 git add .
-git commit -m "v2.8.0"
-git tag v2.8.0
+git commit -m "v3.10.2"
+git tag v3.10.2
 git push
 git push --tags
 ```

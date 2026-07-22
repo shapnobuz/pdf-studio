@@ -12,7 +12,7 @@ cargo tauri icon src-tauri/logo.png        # আইকন-সেট তৈরি
 cargo tauri build                          # মূল build (প্রথমবার ১৫-৩০ মিনিট)
 ```
 Installer পাবে এখানে:
-`src-tauri\target\release\bundle\nsis\PDF Studio_2.5.0_x64-setup.exe`
+`src-tauri\target\release\bundle\nsis\PDF Studio_3.10.1_x64-setup.exe`
 
 ## ইনস্টলের পর
 - যেকোনো PDF-এ **right-click → Open with → PDF Studio**
