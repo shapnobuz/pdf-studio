@@ -22,7 +22,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_YOUR_GENERATED_PUBLIC_KEY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk3MjIxNzBENEREMUM2MTAKUldRUXh0Rk5EUmNpbDBnaloxdnAyZU0xNzZvb2ZWSmllV2JWRHcxQ29PNmdQVGF1Vm9aODZFcUQK",
       "endpoints": [
         "https://github.com/shapnobuz/pdf-studio/releases/latest/download/latest.json"
       ]
