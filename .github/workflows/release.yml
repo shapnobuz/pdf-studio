@@ -1,0 +1,48 @@
+name: release
+
+# Push a version tag (e.g. `git tag v2.8.0 && git push --tags`) to trigger this.
+# It builds the Windows installer, signs it with your Tauri signing key
+# (stored as repo secrets — see AUTO_UPDATE_SETUP_BN.md), and publishes it
+# as a GitHub Release together with the `latest.json` manifest the app's
+# updater checks. Anyone running an older build gets prompted to update
+# automatically the next time they open PDF Studio.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # tauri.conf.json's bundle.icon points at src-tauri/icons/*, which are
+      # generated from src-tauri/logo.png (the single source of truth) and are
+      # not committed. Regenerate them here so the bundler finds them.
+      - name: Generate app icons
+        run: npx --yes @tauri-apps/cli@latest icon src-tauri/logo.png --output src-tauri/icons
+
+      - name: Build, sign, and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "PDF Studio ${{ github.ref_name }}"
+          releaseBody: "Automatic build. Existing installs will be offered this update automatically."
+          releaseDraft: false
+          prerelease: false

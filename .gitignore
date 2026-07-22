@@ -1,0 +1,19 @@
+# Rust / Tauri build output
+/src-tauri/target/
+target/
+
+# Generated app icons (produced from src-tauri/logo.png by `tauri icon`,
+# in CI and in local builds — see BUILD_INSTRUCTIONS_BN.md). Not committed.
+/src-tauri/icons/
+
+# Node
+node_modules/
+
+# Tauri signing keys — NEVER commit these
+*.key
+*.key.pub
+.tauri/
+
+# OS cruft
+.DS_Store
+Thumbs.db
