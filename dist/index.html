@@ -239,7 +239,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .bm-panel{overflow:auto;flex:1;padding:2px 8px 10px;}
   .bm-item{padding:6px 6px;font-size:13px;line-height:1.35;border-radius:6px;cursor:pointer;color:var(--text);white-space:normal;word-break:break-word;}
   .bm-item:hover{background:rgba(127,127,127,.14);}
-  .bm-empty{padding:16px 10px;font-size:12px;color:var(--muted);}
+  .bm-empty{padding:16px 10px;font-size:12px;color:var(--muted);line-height:1.5;}
+  .bm-add{width:calc(100% - 4px);margin:4px 2px 8px;padding:8px;font:inherit;font-size:12px;font-weight:600;
+    border:1px dashed rgba(127,127,127,.45);border-radius:8px;background:transparent;color:var(--accent);cursor:pointer;}
+  .bm-add:hover{background:rgba(127,127,127,.10);}
+  .bm-head{padding:8px 6px 3px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .bm-user{display:flex;align-items:center;gap:6px;}
+  .bm-page{flex:none;min-width:24px;text-align:center;font-size:11px;font-weight:700;color:var(--accent);
+    background:rgba(127,127,127,.14);border-radius:5px;padding:2px 4px;font-variant-numeric:tabular-nums;}
+  .bm-label{flex:1;min-width:0;outline:none;white-space:normal;word-break:break-word;}
+  .bm-label.editing{background:rgba(127,127,127,.18);border-radius:4px;padding:0 3px;}
+  .bm-del{flex:none;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;
+    line-height:1;padding:0 4px;border-radius:4px;opacity:.6;}
+  .bm-user:hover .bm-del{opacity:1;}
+  .bm-del:hover{color:#e5484d;background:rgba(229,72,77,.12);}
   .note-pop{position:absolute;z-index:60;width:232px;background:#fff;border:1px solid rgba(0,0,0,.25);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:8px;display:flex;flex-direction:column;gap:6px;}
   .note-pop-head{font-size:11px;font-weight:600;color:#555;}
   .note-pop textarea{width:100%;min-height:70px;resize:vertical;font:inherit;font-size:13px;line-height:1.4;padding:6px;border-radius:6px;border:1px solid rgba(0,0,0,.2);background:#fffbe8;color:#222;box-sizing:border-box;}
@@ -661,7 +674,7 @@ async function loadBytes(bytes, reset, name){
   if(reset){
     state.pageOrder = Array.from({length:doc.numPages},(_,i)=>i+1);
     state.rotations = {}; state.annos = {}; state.assets = {}; state.selected=null;
-    state.undoStack=[]; state.redoStack=[]; state.textCache={}; state.ocrCache={}; state.importedNotes={}; state.thumbSel.clear(); state.outline=null; state.sidebarTab="pages";
+    state.undoStack=[]; state.redoStack=[]; state.textCache={}; state.ocrCache={}; state.importedNotes={}; state.thumbSel.clear(); state.outline=null; state.userBookmarks=[]; state.sidebarTab="pages";
     state.formFields=[]; state.formValues={}; $("formBanner")&&$("formBanner").classList.add("hidden"); $("formPanel")&&$("formPanel").classList.add("hidden");
     state.search={q:"",matches:[],idx:-1}; $("searchInput").value=""; $("searchCount").textContent="";
   }
@@ -669,7 +682,7 @@ async function loadBytes(bytes, reset, name){
   if(reset && state.fitWidth){ await computeFitScale(); }
   await renderAll(); await renderThumbs();
   if(reset) detectForm();
-  if(reset) loadOutline();
+  if(reset){ loadUserBookmarks(); loadOutline(); }
   if(reset) setTimeout(restoreReadPos, 350);
 }
 
@@ -1591,18 +1604,31 @@ function reorderPage(from,to){ pushUndo(); const arr=state.pageOrder; const [m]=
 /* ============================================================
    SEARCH
    ============================================================ */
+/* Bengali-tolerant search normalization: NFC + lowercase, fold Bengali/Arabic
+   digits to ASCII (so ১২৩ ↔ 123 for দাগ/দলিল/মামলা নম্বর), and drop zero-width
+   joiners (ZWNJ/ZWJ) that otherwise silently break Bengali matches. */
+function normSearch(s){
+  if(!s) return "";
+  try{ s=s.normalize("NFC"); }catch(e){}
+  s=s.toLowerCase();
+  s=s.replace(/[০-৯]/g,d=>String.fromCharCode(48+(d.charCodeAt(0)-0x09E6)));
+  s=s.replace(/[٠-٩]/g,d=>String.fromCharCode(48+(d.charCodeAt(0)-0x0660)));
+  s=s.replace(/[\u200B\u200C\u200D\uFEFF]/g,"");
+  return s;
+}
 async function runSearch(q){
   state.search={q:q, matches:[], idx:-1}; clearSearchHighlights();
   if(!q || !state.pdfDoc){ $("searchCount").textContent=""; return; }
-  const ql=q.toLowerCase();
+  const ql=normSearch(q);
+  if(!ql){ $("searchCount").textContent=""; return; }
   for(let i=0;i<state.pageOrder.length;i++){
     const orig=state.pageOrder[i];
     const page=await state.pdfDoc.getPage(orig);
     const tc=state.textCache[orig]||(state.textCache[orig]=await page.getTextContent());
-    tc.items.forEach((it,idx)=>{ if(it.str && it.str.toLowerCase().includes(ql)) state.search.matches.push({orig,index:i,itemIndex:idx}); });
+    tc.items.forEach((it,idx)=>{ if(it.str && normSearch(it.str).includes(ql)) state.search.matches.push({orig,index:i,itemIndex:idx}); });
     // also search OCR'd text (scanned pages, incl. Bengali)
     const oc=state.ocrCache[orig];
-    if(oc) oc.forEach((it,oi)=>{ if(it.str && it.str.toLowerCase().includes(ql)) state.search.matches.push({orig,index:i,ocrIndex:oi}); });
+    if(oc) oc.forEach((it,oi)=>{ if(it.str && normSearch(it.str).includes(ql)) state.search.matches.push({orig,index:i,ocrIndex:oi}); });
   }
   $("searchCount").textContent = state.search.matches.length ? "0/"+state.search.matches.length : "No results";
   renderedPages.forEach(w=>{ applySearchToPage(w); drawAnnoLayer(w); });
@@ -2322,16 +2348,59 @@ function renderOutlineList(items, container, depth){
     if(it.items && it.items.length) renderOutlineList(it.items, container, depth+1);
   }
 }
+/* ---- User bookmarks: named, per-document (localStorage keyed by fingerprint) ---- */
+function bmKey(){ return "pdfstudio-bm-"+docFingerprint(); }
+function loadUserBookmarks(){ try{ const v=localStorage.getItem(bmKey()); state.userBookmarks=v?JSON.parse(v):[]; }catch(e){ state.userBookmarks=[]; } }
+function saveUserBookmarks(){ try{ localStorage.setItem(bmKey(), JSON.stringify(state.userBookmarks||[])); }catch(e){} }
+function bmPos(orig){ return state.pageOrder.indexOf(orig); }               // current position of an original page (-1 if removed)
+function bmJump(orig){ const pos=bmPos(orig); if(pos<0){ toast("সেই পাতা এখন ডকুমেন্টে নেই",""); return; } scrollToPage(pos); }
+function addCurrentBookmark(){
+  if(!state.pdfDoc) return;
+  const pos=currentVisibleIndex(); const orig=state.pageOrder[pos];
+  const bm={orig, label:"পাতা "+(pos+1), ts:Date.now()+"-"+Math.random().toString(36).slice(2,6)};
+  state.userBookmarks=state.userBookmarks||[]; state.userBookmarks.push(bm);
+  saveUserBookmarks(); renderBookmarksPanel();
+  const lbl=$("bookmarksPanel").querySelector('.bm-label[data-id="'+bm.ts+'"]'); if(lbl) startBmRename(lbl,bm);   // let user name it right away
+}
+function removeBookmark(bm){ state.userBookmarks=(state.userBookmarks||[]).filter(x=>x!==bm); saveUserBookmarks(); renderBookmarksPanel(); }
+function startBmRename(lbl,bm){
+  lbl.contentEditable="true"; lbl.classList.add("editing"); lbl.focus();
+  const range=document.createRange(); range.selectNodeContents(lbl); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  const finish=()=>{ lbl.contentEditable="false"; lbl.classList.remove("editing"); const t=lbl.textContent.trim(); bm.label=t||("পাতা "+((bmPos(bm.orig)+1)||"")); lbl.textContent=bm.label; saveUserBookmarks(); lbl.removeEventListener("blur",finish); lbl.removeEventListener("keydown",onkey); };
+  const onkey=(e)=>{ if(e.key==="Enter"){ e.preventDefault(); lbl.blur(); } else if(e.key==="Escape"){ lbl.textContent=bm.label; lbl.blur(); } };
+  lbl.addEventListener("blur",finish); lbl.addEventListener("keydown",onkey);
+}
 function renderBookmarksPanel(){
-  const p=$("bookmarksPanel"); p.innerHTML="";
-  if(!state.outline || !state.outline.length){ p.innerHTML='<div class="bm-empty">This PDF has no bookmarks.</div>'; return; }
-  renderOutlineList(state.outline, p, 0);
+  const p=$("bookmarksPanel"); if(!p) return; p.innerHTML="";
+  const add=document.createElement("button"); add.className="bm-add"; add.textContent="+ এই পাতা bookmark করুন";
+  add.addEventListener("click", addCurrentBookmark); p.appendChild(add);
+  const ubs=(state.userBookmarks||[]).slice().sort((a,b)=>{ const pa=bmPos(a.orig),pb=bmPos(b.orig); return (pa<0?1e9:pa)-(pb<0?1e9:pb); });
+  if(ubs.length){
+    const h=document.createElement("div"); h.className="bm-head"; h.textContent="আপনার বুকমার্ক"; p.appendChild(h);
+    ubs.forEach(bm=>{
+      const pos=bmPos(bm.orig);
+      const row=document.createElement("div"); row.className="bm-item bm-user";
+      const badge=document.createElement("span"); badge.className="bm-page"; badge.textContent=pos<0?"✕":(pos+1);
+      const lbl=document.createElement("span"); lbl.className="bm-label"; lbl.textContent=bm.label; lbl.dataset.id=bm.ts; lbl.title="ক্লিক: যান · ডাবল-ক্লিক: নাম বদলান";
+      const del=document.createElement("button"); del.className="bm-del"; del.textContent="×"; del.title="মুছুন";
+      row.addEventListener("click",e=>{ if(e.target===del || lbl.isContentEditable) return; bmJump(bm.orig); });
+      lbl.addEventListener("dblclick",e=>{ e.stopPropagation(); startBmRename(lbl,bm); });
+      del.addEventListener("click",e=>{ e.stopPropagation(); removeBookmark(bm); });
+      row.appendChild(badge); row.appendChild(lbl); row.appendChild(del); p.appendChild(row);
+    });
+  }
+  if(state.outline && state.outline.length){
+    const h=document.createElement("div"); h.className="bm-head"; h.textContent="PDF-এর নিজস্ব আউটলাইন"; p.appendChild(h);
+    renderOutlineList(state.outline, p, 0);
+  }
+  if(!ubs.length && !(state.outline && state.outline.length)){
+    const e=document.createElement("div"); e.className="bm-empty"; e.textContent="এখনো কোনো বুকমার্ক নেই। উপরের বোতামে ক্লিক করে বর্তমান পাতা যোগ করুন।"; p.appendChild(e);
+  }
 }
 async function loadOutline(){
   try{ const ol=await state.pdfDoc.getOutline(); state.outline=(ol && ol.length)?ol:null; }
   catch(e){ state.outline=null; }
-  $("bmTabBtn").classList.toggle("hidden", !state.outline);
-  if(!state.outline && state.sidebarTab==="bookmarks") setSidebarTab("pages");
+  $("bmTabBtn").classList.remove("hidden");   // always available — user can add their own bookmarks even when the PDF has no native outline
   renderBookmarksPanel();
 }
 async function detectForm(){
