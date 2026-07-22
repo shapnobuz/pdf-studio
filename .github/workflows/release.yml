@@ -1,16 +1,26 @@
 name: release
 
-# Push a version tag (e.g. `git tag v2.8.0 && git push --tags`) to trigger this.
-# It builds the Windows installer, signs it with your Tauri signing key
-# (stored as repo secrets — see AUTO_UPDATE_SETUP_BN.md), and publishes it
-# as a GitHub Release together with the `latest.json` manifest the app's
-# updater checks. Anyone running an older build gets prompted to update
-# automatically the next time they open PDF Studio.
+# Two ways to trigger this:
+#   1. Push a version tag:  `git tag v3.10.2 && git push --tags`
+#   2. Run it manually from the Actions tab (or the API) via workflow_dispatch,
+#      passing the version (e.g. `v3.10.2`) — tauri-action then creates that tag
+#      and release for you. Handy when tag pushes aren't available.
+# Either way it builds the Windows installer, signs it with your Tauri signing
+# key (stored as repo secrets — see AUTO_UPDATE_SETUP_BN.md), and publishes it
+# as a GitHub Release together with the `latest.json` manifest the app's updater
+# checks. Anyone running an older build gets prompted to update automatically
+# the next time they open PDF Studio.
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to create and release, e.g. v3.10.1"
+        required: true
+        default: "v3.10.1"
 
 jobs:
   release:
@@ -41,8 +51,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "PDF Studio ${{ github.ref_name }}"
+          tagName: ${{ inputs.version || github.ref_name }}
+          releaseName: "PDF Studio ${{ inputs.version || github.ref_name }}"
           releaseBody: "Automatic build. Existing installs will be offered this update automatically."
           releaseDraft: false
           prerelease: false
