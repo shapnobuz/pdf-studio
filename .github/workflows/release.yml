@@ -53,6 +53,16 @@ jobs:
         with:
           tagName: ${{ inputs.version || github.ref_name }}
           releaseName: "PDF Studio ${{ inputs.version || github.ref_name }}"
-          releaseBody: "Automatic build. Existing installs will be offered this update automatically."
+          releaseBody: |
+            ## PDF Studio ${{ inputs.version || github.ref_name }}
+
+            সম্পূর্ণ অফলাইন, প্রাইভেট PDF রিডার ও এডিটর — জমির দলিল, কোর্ট পেপার আর ইনভয়েসের জন্য তৈরি। কোনো ডেটা বাইরে যায় না, সব কাজ নিজের কম্পিউটারেই। বাংলা OCR সহ (যা Adobe Acrobat পারে না)।
+
+            ### 📥 ইনস্টল
+            নিচের `PDF.Studio_..._x64-setup.exe` ফাইলটি ডাউনলোড করে চালান।
+            প্রথমবার Windows SmartScreen সতর্ক করলে → **More info → Run anyway**।
+
+            ### 🔄 আপডেট
+            যাদের আগে থেকেই PDF Studio ইনস্টল করা আছে, তাঁরা পরের বার app খুললেই এই নতুন ভার্সনের update-toast দেখবেন — এক ক্লিকেই ডাউনলোড, ইনস্টল ও রিস্টার্ট।
           releaseDraft: false
           prerelease: false
