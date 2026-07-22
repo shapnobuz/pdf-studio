@@ -66,7 +66,8 @@ GitHub repo-র **Actions** ট্যাবে গিয়ে দেখো buil
 আমি (Claude) যখন নতুন `pdf-studio.html` দেব:
 1. সেটা `pdf-studio-desktop/dist/index.html`-এ বসাও (পুরনোটা বদলে দাও)
 2. `src-tauri/tauri.conf.json` আর `src-tauri/Cargo.toml`-এ version number বাড়াও (যেমন `3.10.1` → `3.10.2`) — **দুই জায়গাতেই বাড়াতে হবে**
-3.
+3. `CHANGELOG.md`-এ নতুন একটা সেকশন যোগ করো — `## [Unreleased]`-এর তলার লেখাগুলো `## [3.10.2] - YYYY-MM-DD` সেকশনে সরিয়ে দাও (কী কী বদলালো লেখো)। build-এর সময় এই সেকশনটাই release-এর নোটে বসে যাবে।
+4.
 ```powershell
 git add .
 git commit -m "v3.10.2"
@@ -74,7 +75,9 @@ git tag v3.10.2
 git push
 git push --tags
 ```
-ব্যস — GitHub বাকি সব (build, sign, publish) নিজে থেকেই করবে। কারো কম্পিউটারে হাত দিতে হবে না — পরের বার তারা app খুললেই update-toast দেখবে।
+ব্যস — GitHub বাকি সব (build, sign, publish, release-নোট) নিজে থেকেই করবে। কারো কম্পিউটারে হাত দিতে হবে না — পরের বার তারা app খুললেই update-toast দেখবে।
+
+> tag push এই environment-এ আটকালে বিকল্প: GitHub → **Actions → release → Run workflow** → version (`v3.10.2`) দাও। একই কাজ হবে।
 
 ---
 
