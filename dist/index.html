@@ -109,14 +109,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     --danger:#f0626c;
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
+  html,body{height:100%;margin:0;overflow-x:hidden;max-width:100%}
   body{font-family:var(--font);background:var(--bg);color:var(--text);
     -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
   button{font-family:inherit;color:inherit;cursor:pointer}
   ::selection{background:rgba(79,70,229,.28)}
 
   .topbar{height:var(--tb-h);flex:0 0 auto;display:flex;align-items:center;gap:6px;
-    padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border);z-index:40}
+    padding:0 12px;background:var(--panel);border-bottom:1px solid var(--border);z-index:40;
+    overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .topbar::-webkit-scrollbar{display:none}
+  .topbar > *{flex:0 0 auto}
   .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em;padding-right:8px;white-space:nowrap}
   .brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#7c74ff);
     display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px rgba(79,70,229,.4)}

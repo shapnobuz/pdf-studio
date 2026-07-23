@@ -1,1 +1,1 @@
-revert pinch, fix fullscreen layout 1784847562
+fix fullscreen: topbar overflow (real cause) 30e3e1a
