@@ -284,6 +284,43 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .epub.er-sepia .epub-content{color:#4b3a26;}
   .epub.er-sepia .epub-bar,.epub.er-sepia .epub-foot{background:#efe6cf;border-color:#e2d4b0;}
   .epub.er-sepia .epub-title{color:#4b3a26;}
+  /* Library / bookshelf */
+  .library{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--workspace);overflow:hidden;}
+  .library.hidden{display:none;}
+  body.mode-lib .toolbar, body.mode-lib .zoom, body.mode-lib .search{display:none;}
+  .lib-head{flex:0 0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 24px 8px;}
+  .lib-h{margin:0;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+  .lib-goal{margin-left:auto;display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 12px;}
+  .goal-streak{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;}
+  .goal-mid{display:flex;flex-direction:column;gap:4px;min-width:150px;}
+  .goal-label{font-size:11px;color:var(--muted);}
+  .goal-bar{height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden;}
+  .goal-bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .3s;}
+  .goal-ctrls{display:flex;gap:3px;}
+  .goal-ctrls button{width:24px;height:24px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:6px;cursor:pointer;font-size:15px;line-height:1;}
+  .goal-ctrls button:hover{background:var(--panel);}
+  .lib-filters{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;padding:6px 24px 14px;}
+  .lib-chip{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;}
+  .lib-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .lib-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:18px;padding:6px 24px 40px;align-content:start;}
+  .lib-empty{grid-column:1/-1;color:var(--muted);font-size:14px;padding:40px 10px;text-align:center;line-height:1.6;}
+  .book-card{cursor:pointer;display:flex;flex-direction:column;gap:6px;border-radius:12px;outline:none;}
+  .book-card:hover .book-cover,.book-card:focus-visible .book-cover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(0,0,0,.18);}
+  .book-cover{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:var(--panel-2);border:1px solid var(--border);transition:transform .15s,box-shadow .15s;}
+  .book-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+  .book-cover.noimg{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:14px;background:linear-gradient(160deg,var(--accent-weak),var(--panel-2));}
+  .book-cover.noimg span{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--accent);}
+  .book-cover.noimg b{font-size:14px;line-height:1.35;color:var(--text);font-weight:650;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+  .book-type{position:absolute;top:6px;right:6px;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;}
+  .book-prog{height:4px;border-radius:2px;background:var(--panel-2);overflow:hidden;}
+  .book-prog>i{display:block;height:100%;background:var(--accent);border-radius:2px;}
+  .book-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .book-auth{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .book-acts{display:flex;align-items:center;gap:6px;margin-top:2px;}
+  .book-shelf{font:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;}
+  .book-shelf:hover{color:var(--text);}
+  .book-del{margin-left:auto;width:22px;height:22px;border:none;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;font-size:16px;line-height:1;}
+  .book-del:hover{color:#e5484d;background:rgba(229,72,77,.12);}
   .note-pop{position:absolute;z-index:60;width:232px;background:#fff;border:1px solid rgba(0,0,0,.25);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:8px;display:flex;flex-direction:column;gap:6px;}
   .note-pop-head{font-size:11px;font-weight:600;color:#555;}
   .note-pop textarea{width:100%;min-height:70px;resize:vertical;font:inherit;font-size:13px;line-height:1.4;padding:6px;border-radius:6px;border:1px solid rgba(0,0,0,.2);background:#fffbe8;color:#222;box-sizing:border-box;}
@@ -404,6 +441,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
   <button class="icon-btn" id="toggleSidebar" title="Toggle thumbnails"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
   <button class="btn ghost-bordered" id="openBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Open</button>
+  <button class="btn ghost-bordered" id="libBtn" title="আমার লাইব্রেরি"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
   <div class="divider"></div>
   <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5H9"/></svg></button>
   <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0-5 5v0a5 5 0 0 0 5 5h6"/></svg></button>
@@ -513,6 +551,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       </div>
       <div class="epub-scroll" id="epubScroll"><article class="epub-content" id="epubContent"></article></div>
       <div class="epub-foot"><div class="epub-prog" id="epubProg"><i></i></div><span class="epub-pct" id="epubPct"></span></div>
+    </div>
+    <div class="library hidden" id="library">
+      <div class="lib-head">
+        <h2 class="lib-h">আমার লাইব্রেরি</h2>
+        <div class="lib-goal" id="libGoal"></div>
+      </div>
+      <div class="lib-filters" id="libFilters"></div>
+      <div class="lib-grid" id="libGrid"></div>
     </div>
   </main>
 </div>
@@ -747,6 +793,7 @@ async function openEpub(bytes){
   enterEpubReader();
   const pos=epubLoadPos();
   await renderChapter(Math.min(spine.length-1, Math.max(0, pos.i||0)), pos.frac||0);
+  try{ const cover=await epubCoverDataUrl(zip, base, manifest, opf); libraryRegister(bytes, {type:"epub", name:state.fileName, title:meta.title, author:meta.author, cover}); }catch(e){}
 }
 
 async function epubParseNav(zip, path){
@@ -812,7 +859,7 @@ function renderEpubToc(){
 }
 
 function epubFP(){ return (state.fileName||"book")+"|epub|"+(state.epub&&state.epub.spine?state.epub.spine.length:0); }
-function epubSavePos(){ try{ const sc=$("epubScroll"); const frac=sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0; localStorage.setItem("pdfstudio-epubpos-"+epubFP(), JSON.stringify({i:state.epub.idx, frac})); }catch(e){} }
+function epubSavePos(){ try{ const sc=$("epubScroll"); const frac=sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0; localStorage.setItem("pdfstudio-epubpos-"+epubFP(), JSON.stringify({i:state.epub.idx, frac})); libraryUpdateProgress(((state.epub.idx+frac)/state.epub.spine.length)*100); }catch(e){} }
 function epubLoadPos(){ try{ const v=localStorage.getItem("pdfstudio-epubpos-"+epubFP()); return v?JSON.parse(v):{}; }catch(e){ return {}; } }
 function updateEpubProgress(){
   const ep=state.epub; if(!ep) return; const sc=$("epubScroll");
@@ -833,6 +880,7 @@ function applyEpubPref(){
 }
 
 function enterEpubReader(){
+  hideLibrary();
   document.body.classList.add("mode-epub");
   emptyEl.style.display="none"; pagesEl.style.display="none";
   const r=$("epubReader"); if(r) r.classList.remove("hidden");
@@ -878,7 +926,7 @@ async function openPdfDoc(bytes){
 
 async function loadBytes(bytes, reset, name){
   if(name){ state.fileName=name; }
-  exitEpubReader();                 // opening a PDF leaves EPUB reading mode
+  exitEpubReader(); hideLibrary();   // opening a PDF leaves EPUB / library views
   state.baseBytes = bytes.slice(0);
   const doc = await openPdfDoc(bytes);
   state.pdfDoc = doc; state.numPages = doc.numPages;
@@ -894,6 +942,7 @@ async function loadBytes(bytes, reset, name){
   await renderAll(); await renderThumbs();
   if(reset) detectForm();
   if(reset){ loadUserBookmarks(); loadOutline(); }
+  if(reset) pdfCoverDataUrl().then(cover=>libraryRegister(state.baseBytes,{type:"pdf",name:state.fileName,title:(state.fileName||"document").replace(/\.pdf$/i,""),cover}));
   if(reset) setTimeout(restoreReadPos, 350);
 }
 
@@ -2237,9 +2286,137 @@ function showUpdateToast(version){
   });
   $("toastWrap").appendChild(t);
 }
+/* ============================================================
+   LIBRARY — persistent bookshelf (IndexedDB) + reading goal/streak
+   ============================================================ */
+let _idb=null;
+function idb(){ return new Promise((res,rej)=>{ if(_idb) return res(_idb);
+  let r; try{ r=indexedDB.open("pdfstudio",1); }catch(e){ return rej(e); }
+  r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains("books")) db.createObjectStore("books",{keyPath:"id"}); };
+  r.onsuccess=()=>{ _idb=r.result; res(_idb); }; r.onerror=()=>rej(r.error); }); }
+function idbReq(mode, fn){ return idb().then(db=>new Promise((res,rej)=>{ const tx=db.transaction("books",mode); const rq=fn(tx.objectStore("books")); tx.oncomplete=()=>res(rq&&rq.result); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); })); }
+function libPut(b){ return idbReq("readwrite",st=>st.put(b)); }
+function libGet(id){ return idbReq("readonly",st=>st.get(id)); }
+function libAll(){ return idbReq("readonly",st=>st.getAll()); }
+function libDel(id){ return idbReq("readwrite",st=>st.delete(id)); }
+function bookId(name,size){ let h=0,s=(name||"")+"|"+size; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return "b"+(h>>>0).toString(36)+"-"+size; }
+
+async function libraryRegister(bytes, meta){
+  try{
+    const size=bytes.length||bytes.byteLength||0; const id=bookId(meta.name,size); state.bookId=id;
+    const existing=await libGet(id);
+    const book=existing||{ id, addedAt:Date.now(), shelf:"reading", progress:{pct:0} };
+    book.name=meta.name; book.type=meta.type; book.size=size;
+    book.title=meta.title||book.title||meta.name; book.author=meta.author||book.author||"";
+    if(meta.cover) book.cover=meta.cover;
+    book.blob=(existing&&existing.blob)?existing.blob:bytes;   // don't rewrite the (large) blob on reopen
+    book.lastOpenedAt=Date.now();
+    await libPut(book);
+  }catch(e){}
+}
+async function libraryUpdateProgress(pct){
+  if(!state.bookId || !Number.isFinite(pct)) return;
+  try{ const b=await libGet(state.bookId); if(!b) return; b.progress={pct:Math.max(0,Math.min(100,Math.round(pct)))}; b.lastOpenedAt=Date.now(); if(b.progress.pct>=95 && b.shelf==="reading") b.shelf="finished"; await libPut(b); }catch(e){}
+}
+async function pdfCoverDataUrl(){
+  try{ const pg=await state.pdfDoc.getPage(state.pageOrder[0]||1); const v0=pg.getViewport({scale:1}); const v=pg.getViewport({scale:200/v0.width});
+    const c=document.createElement("canvas"); c.width=v.width; c.height=v.height; await pg.render({canvasContext:c.getContext("2d"),viewport:v}).promise; return c.toDataURL("image/jpeg",0.7);
+  }catch(e){ return ""; }
+}
+function imgBlobToCover(blob){ return new Promise(res=>{ const url=URL.createObjectURL(blob); const im=new Image();
+  im.onload=()=>{ try{ const w=200,h=Math.max(1,Math.round(im.height*(w/im.width))); const c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(im,0,0,w,h); res(c.toDataURL("image/jpeg",0.72)); }catch(e){ res(""); } URL.revokeObjectURL(url); };
+  im.onerror=()=>{ URL.revokeObjectURL(url); res(""); }; im.src=url; }); }
+async function epubCoverDataUrl(zip, base, manifest, opf){
+  try{ let href="";
+    const cm=Object.keys(manifest).find(k=>/cover-image/.test(manifest[k].props)); if(cm) href=manifest[cm].href;
+    if(!href){ const mc=[...opf.getElementsByTagName("meta")].find(m=>m.getAttribute("name")==="cover"); const cid=mc&&mc.getAttribute("content"); if(cid&&manifest[cid]) href=manifest[cid].href; }
+    if(!href) return ""; const f=epubZipFile(zip, epubResolve(base,href)); if(!f) return "";
+    return await imgBlobToCover(await f.async("blob"));
+  }catch(e){ return ""; }
+}
+
+const LIB_SHELVES=[["all","সব"],["reading","পড়ছি"],["finished","পড়েছি"],["toread","পড়ব"]];
+let libFilter="all";
+function shelfLabel(s){ return s==="finished"?"পড়েছি":(s==="toread"?"পড়ব":"পড়ছি"); }
+async function showLibrary(){
+  const lib=$("library"); if(!lib) return;
+  document.body.classList.add("mode-lib");
+  emptyEl.style.display="none"; if($("epubReader")) $("epubReader").classList.add("hidden"); pagesEl.style.display="none";
+  lib.classList.remove("hidden"); await renderLibrary();
+}
+function hideLibrary(){ document.body.classList.remove("mode-lib"); const lib=$("library"); if(lib) lib.classList.add("hidden"); pagesEl.style.display=""; }
+async function renderLibrary(){
+  const grid=$("libGrid"); if(!grid) return;
+  renderGoalWidget();
+  let books=[]; try{ books=await libAll(); }catch(e){}
+  books.sort((a,b)=>(b.lastOpenedAt||0)-(a.lastOpenedAt||0));
+  const fbar=$("libFilters"); fbar.innerHTML="";
+  LIB_SHELVES.forEach(([k,label])=>{ const n=k==="all"?books.length:books.filter(x=>x.shelf===k).length; const b=document.createElement("button"); b.className="lib-chip"+(libFilter===k?" active":""); b.textContent=label+" ("+n+")"; b.onclick=()=>{ libFilter=k; renderLibrary(); }; fbar.appendChild(b); });
+  const shown=books.filter(b=>libFilter==="all"||b.shelf===libFilter);
+  grid.innerHTML="";
+  if(!shown.length){ const e=document.createElement("div"); e.className="lib-empty"; e.textContent="এই তাকে কোনো বই নেই। উপরের Open দিয়ে একটা PDF বা EPUB খুললেই সেটা এখানে যুক্ত হয়ে যাবে।"; grid.appendChild(e); return; }
+  shown.forEach(b=>grid.appendChild(bookCard(b)));
+}
+function bookCard(b){
+  const card=document.createElement("div"); card.className="book-card"; card.tabIndex=0;
+  const cov=document.createElement("div"); cov.className="book-cover";
+  if(b.cover){ const im=document.createElement("img"); im.src=b.cover; im.alt=""; im.loading="lazy"; cov.appendChild(im); }
+  else { cov.classList.add("noimg"); const k=document.createElement("span"); k.textContent=b.type==="epub"?"EPUB":"PDF"; const tt=document.createElement("b"); tt.textContent=b.title||b.name||"?"; cov.appendChild(k); cov.appendChild(tt); }
+  const badge=document.createElement("span"); badge.className="book-type"; badge.textContent=(b.type||"pdf").toUpperCase(); cov.appendChild(badge);
+  const pct=Math.round((b.progress&&b.progress.pct)||0);
+  const bar=document.createElement("div"); bar.className="book-prog"; const bi=document.createElement("i"); bi.style.width=pct+"%"; bar.appendChild(bi);
+  const t=document.createElement("div"); t.className="book-title"; t.textContent=b.title||b.name;
+  const a=document.createElement("div"); a.className="book-auth"; a.textContent=(b.author||"")+(pct?((b.author?" · ":"")+pct+"%"):"");
+  const acts=document.createElement("div"); acts.className="book-acts";
+  const shelfBtn=document.createElement("button"); shelfBtn.className="book-shelf"; shelfBtn.textContent=shelfLabel(b.shelf); shelfBtn.title="তাক বদলান";
+  shelfBtn.onclick=async e=>{ e.stopPropagation(); const order=["reading","finished","toread"]; b.shelf=order[(order.indexOf(b.shelf)+1)%order.length]; await libPut(b); renderLibrary(); };
+  const del=document.createElement("button"); del.className="book-del"; del.textContent="×"; del.title="লাইব্রেরি থেকে সরান";
+  del.onclick=async e=>{ e.stopPropagation(); await libDel(b.id); renderLibrary(); };
+  acts.appendChild(shelfBtn); acts.appendChild(del);
+  card.appendChild(cov); card.appendChild(bar); card.appendChild(t); card.appendChild(a); card.appendChild(acts);
+  card.onclick=()=>openFromLibrary(b.id);
+  card.onkeydown=e=>{ if(e.key==="Enter") openFromLibrary(b.id); };
+  return card;
+}
+async function openFromLibrary(id){
+  let b; try{ b=await libGet(id); }catch(e){}
+  if(!b || !b.blob){ toast("বইটির ডেটা পাওয়া যায়নি",""); return; }
+  hideLibrary();
+  const bytes=b.blob instanceof Uint8Array?b.blob:new Uint8Array(b.blob); state.fileName=b.name;
+  try{ if(b.type==="epub"){ await openEpub(bytes); } else { await workerReady; await loadBytes(bytes, true, b.name); } toast("Opened "+(b.title||b.name)); }
+  catch(e){ showLoadErr("বইটি খুলতে সমস্যা হলো।"); }
+}
+
+/* reading goal + streak (localStorage) */
+const READ_KEY="pdfstudio-reading";
+function readingData(){ try{ return Object.assign({goal:30,days:{},streak:0}, JSON.parse(localStorage.getItem(READ_KEY))||{}); }catch(e){ return {goal:30,days:{},streak:0}; } }
+function saveReading(d){ try{ localStorage.setItem(READ_KEY, JSON.stringify(d)); }catch(e){} }
+function dayKey(off){ const d=new Date(); if(off) d.setDate(d.getDate()+off); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function computeStreak(days){ let s=0,i=0; if(!((days[dayKey(0)]||0)>0)) i=-1; while((days[dayKey(i)]||0)>0){ s++; i--; if(i<-4000) break; } return s; }
+function addReadingMinute(){ const d=readingData(); const k=dayKey(0); d.days[k]=(d.days[k]||0)+1; d.streak=computeStreak(d.days); saveReading(d); renderGoalWidget(); }
+let _readTimer=null;
+function startReadTimer(){ if(_readTimer) return; _readTimer=setInterval(()=>{ if(document.visibilityState==="visible" && (state.pdfDoc||state.epub)) addReadingMinute(); }, 60000); }
+function renderGoalWidget(){
+  const w=$("libGoal"); if(!w) return; const d=readingData(); const mins=d.days[dayKey(0)]||0; const goal=d.goal||30; const pct=Math.min(100,Math.round(mins/goal*100));
+  w.innerHTML="";
+  const streak=document.createElement("div"); streak.className="goal-streak"; streak.textContent="🔥 "+(d.streak||0)+" দিন";
+  const mid=document.createElement("div"); mid.className="goal-mid";
+  const lab=document.createElement("div"); lab.className="goal-label"; lab.textContent="আজ পড়েছ "+mins+" / "+goal+" মিনিট";
+  const bar=document.createElement("div"); bar.className="goal-bar"; const gi=document.createElement("i"); gi.style.width=pct+"%"; bar.appendChild(gi);
+  mid.appendChild(lab); mid.appendChild(bar);
+  const ctr=document.createElement("div"); ctr.className="goal-ctrls";
+  const mk=(txt,fn)=>{ const b=document.createElement("button"); b.textContent=txt; b.onclick=fn; return b; };
+  ctr.appendChild(mk("−",()=>{ const dd=readingData(); dd.goal=Math.max(5,(dd.goal||30)-5); saveReading(dd); renderGoalWidget(); }));
+  ctr.appendChild(mk("+",()=>{ const dd=readingData(); dd.goal=(dd.goal||30)+5; saveReading(dd); renderGoalWidget(); }));
+  w.appendChild(streak); w.appendChild(mid); w.appendChild(ctr);
+}
+async function libraryInit(){ startReadTimer(); try{ const books=await libAll(); if(books && books.length && !state.pdfDoc && !state.epub) showLibrary(); }catch(e){} }
+$("libBtn") && ($("libBtn").onclick=showLibrary);
+libraryInit();
+
 /* ---------- Resume reading: remember last position per document ---------- */
 function docFingerprint(){ return (state.fileName||"doc")+"|"+(state.baseBytes?state.baseBytes.length:0); }
-function saveReadPos(){ try{ if(!state.pdfDoc) return; localStorage.setItem("pdfstudio-pos-"+docFingerprint(), String(currentVisibleIndex())); }catch(e){} }
+function saveReadPos(){ try{ if(!state.pdfDoc) return; localStorage.setItem("pdfstudio-pos-"+docFingerprint(), String(currentVisibleIndex())); libraryUpdateProgress((currentVisibleIndex()+1)/(state.numPages||state.pageOrder.length||1)*100); }catch(e){} }
 function restoreReadPos(){ try{
   const v=localStorage.getItem("pdfstudio-pos-"+docFingerprint()); if(v===null) return;
   const i=parseInt(v,10);
