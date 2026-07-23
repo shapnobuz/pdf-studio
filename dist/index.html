@@ -276,6 +276,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .epub-content h1,.epub-content h2,.epub-content h3,.epub-content h4{line-height:1.3;text-wrap:balance;}
   .epub-content a{color:var(--accent);}
   .epub-content p{margin:0 0 1em;}
+  /* paged (page-turn) mode: lay text into a fixed-height column and slide horizontally */
+  .epub.er-paged .epub-scroll{overflow:hidden;}
+  .epub.er-paged .epub-content{max-width:none;margin:0;padding:30px var(--er-pad,40px) 24px;height:var(--er-pageh,600px);column-width:var(--er-pagew,600px);column-gap:var(--er-gap,48px);column-fill:auto;will-change:transform;}
+  .epub.er-paged .epub-content img{max-height:var(--er-pageh,600px);}
   .epub-foot{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:6px 14px;border-top:1px solid var(--border);background:var(--panel);}
   .epub-prog{flex:1;height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden;}
   .epub-prog>i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .2s;}
@@ -586,6 +590,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           <button id="epubLine" title="লাইন-ফাঁক" aria-label="Line spacing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 8 3 4 5 4"/><polyline points="3 16 3 20 5 20"/></svg></button>
           <button id="epubWidth" title="পড়ার প্রস্থ" aria-label="Width"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/><line x1="3" y1="12" x2="21" y2="12"/></svg></button>
           <button id="epubTheme" title="সেপিয়া থিম" aria-label="Sepia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+          <button id="epubMode" title="পাতা ওল্টানো / স্ক্রল" aria-label="Page mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></button>
           <button id="epubImmersive" title="নিমগ্ন পড়া (কেন্দ্রে ট্যাপ)" aria-label="Immersive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
         </div>
         <button class="epub-nav" id="epubNext" title="পরের অধ্যায়" aria-label="Next chapter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -885,9 +890,12 @@ async function renderChapter(i, frac){
   }
   content.innerHTML=body.innerHTML;
   hideHlBar(); hideHlMenu(); applyHls();
-  const sc=$("epubScroll"); sc.scrollTop = (frac>0)?frac*Math.max(1, sc.scrollHeight-sc.clientHeight):0;
   $("epubTitle").textContent=ep.meta.title + (ep.meta.author?(" — "+ep.meta.author):"");
-  applyEpubPref(); updateEpubProgress(); epubSavePos(); renderEpubToc();
+  applyEpubPref();
+  const sc=$("epubScroll");
+  if(epubIsPaged()){ sc.scrollTop=0; content.style.transform="none"; layoutPaged(); ep.page=Math.round((frac>0?frac:0)*((ep.pages||1)-1)); applyPageTransform(); }
+  else { content.style.transform=""; sc.scrollTop = (frac>0)?frac*Math.max(1, sc.scrollHeight-sc.clientHeight):0; }
+  updateEpubProgress(); epubSavePos(); renderEpubToc();
 }
 
 function renderEpubToc(){
@@ -919,11 +927,16 @@ function openEpubDrawer(){ const d=$("epubDrawer"); if(d) d.classList.remove("hi
 function closeEpubDrawer(){ const d=$("epubDrawer"); if(d) d.classList.add("hidden"); }
 
 function epubFP(){ return (state.fileName||"book")+"|epub|"+(state.epub&&state.epub.spine?state.epub.spine.length:0); }
-function epubSavePos(){ try{ const sc=$("epubScroll"); const frac=sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0; localStorage.setItem("pdfstudio-epubpos-"+epubFP(), JSON.stringify({i:state.epub.idx, frac})); libraryUpdateProgress(((state.epub.idx+frac)/state.epub.spine.length)*100); }catch(e){} }
+function epubSavePos(){ try{ const frac=epubWithin(); localStorage.setItem("pdfstudio-epubpos-"+epubFP(), JSON.stringify({i:state.epub.idx, frac})); libraryUpdateProgress(((state.epub.idx+frac)/state.epub.spine.length)*100); }catch(e){} }
 function epubLoadPos(){ try{ const v=localStorage.getItem("pdfstudio-epubpos-"+epubFP()); return v?JSON.parse(v):{}; }catch(e){ return {}; } }
+function epubWithin(){
+  const ep=state.epub, sc=$("epubScroll");
+  if(epubIsPaged()) return (ep.pages>1)?(ep.page||0)/(ep.pages-1):0;
+  return sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0;
+}
 function updateEpubProgress(){
-  const ep=state.epub; if(!ep) return; const sc=$("epubScroll");
-  const within=sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0;
+  const ep=state.epub; if(!ep) return;
+  const within=epubWithin();
   const pct=Math.max(0,Math.min(100,Math.round(((ep.idx+within)/ep.spine.length)*100)));
   const bar=$("epubProg").firstElementChild; if(bar) bar.style.width=pct+"%"; $("epubPct").textContent=pct+"%";
 }
@@ -937,6 +950,37 @@ function applyEpubPref(){
   c.style.setProperty("--er-lh",(p.lh||1.75));
   c.style.setProperty("--er-w", p.w==="wide"?"46rem":(p.w==="full"?"100%":"34rem"));
   r.classList.toggle("er-sepia", p.theme==="sepia");
+  r.classList.toggle("er-paged", p.mode==="page");
+}
+function epubIsPaged(){ return epubPref().mode==="page"; }
+function layoutPaged(){
+  const ep=state.epub; if(!ep) return; const sc=$("epubScroll"), c=$("epubContent");
+  const gap=48, pad=40;                                    // gap>=pad so overflow columns never peek past the edge
+  const contentW=Math.max(200, sc.clientWidth - pad*2);
+  const colW=Math.min(contentW, 340);                      // min column width → browser fits 1 col (narrow) or a 2-up spread (wide)
+  c.style.setProperty("--er-pad", pad+"px");
+  c.style.setProperty("--er-gap", gap+"px");
+  c.style.setProperty("--er-pagew", colW+"px");
+  c.style.setProperty("--er-pageh", Math.max(100, sc.clientHeight - 54)+"px");
+  ep.step = contentW + gap;                                // one page spans the full content width
+  ep.pages = Math.max(1, Math.round((c.scrollWidth + gap) / ep.step));   // reading scrollWidth forces the column layout
+}
+function applyPageTransform(){
+  const ep=state.epub, c=$("epubContent"); if(!ep||!c) return;
+  ep.page = Math.max(0, Math.min((ep.pages||1)-1, ep.page||0));
+  c.style.transform = "translateX(" + (-ep.page*(ep.step||0)) + "px)";
+  updateEpubProgress(); epubSavePos();
+}
+function repaginate(){
+  if(!epubIsPaged() || !state.epub) return;
+  const f = (state.epub.pages>1) ? (state.epub.page||0)/(state.epub.pages-1) : 0;
+  layoutPaged(); state.epub.page = Math.round(f*((state.epub.pages||1)-1)); applyPageTransform();
+}
+function goPage(d){
+  const ep=state.epub; if(!ep) return; const np=(ep.page||0)+d;
+  if(np<0){ if(ep.idx>0) renderChapter(ep.idx-1, 1); return; }              // → previous chapter, last page
+  if(np>=(ep.pages||1)){ if(ep.idx<ep.spine.length-1) renderChapter(ep.idx+1, 0); return; }  // → next chapter, first page
+  ep.page=np; applyPageTransform();
 }
 
 /* ---- EPUB highlights & notes: per-book, anchored by character offset so they
@@ -1018,16 +1062,21 @@ function toggleImmersive(on){ document.body.classList.toggle("epub-immersive", o
   const goPrev=()=>{ if(state.epub && state.epub.idx>0) renderChapter(state.epub.idx-1,0); };
   const goNext=()=>{ if(state.epub && state.epub.idx<state.epub.spine.length-1) renderChapter(state.epub.idx+1,0); };
   if(prev) prev.onclick=goPrev; if(next) next.onclick=goNext;
-  const fp=$("epubFontPlus"), fm=$("epubFontMinus"), wb=$("epubWidth"), tb=$("epubTheme"), ln=$("epubLine"), im=$("epubImmersive"), ex=$("epubExit"), toc=$("epubToc"), dbg=$("epubDrawerBg");
-  if(fp) fp.onclick=()=>epubSetPref({fs:Math.min(30,(epubPref().fs||19)+1)});
-  if(fm) fm.onclick=()=>epubSetPref({fs:Math.max(13,(epubPref().fs||19)-1)});
-  if(wb) wb.onclick=()=>{ const cur=epubPref().w||"narrow"; epubSetPref({w: cur==="narrow"?"wide":(cur==="wide"?"full":"narrow")}); };
-  if(ln) ln.onclick=()=>{ const steps=[1.5,1.75,2.05]; const cur=epubPref().lh||1.75; epubSetPref({lh: steps[(steps.indexOf(cur)+1)%steps.length]||1.75}); };
+  const turnFwd=()=>{ if(epubIsPaged()) goPage(1); else goNext(); };
+  const turnBack=()=>{ if(epubIsPaged()) goPage(-1); else goPrev(); };
+  const fp=$("epubFontPlus"), fm=$("epubFontMinus"), wb=$("epubWidth"), tb=$("epubTheme"), ln=$("epubLine"), im=$("epubImmersive"), ex=$("epubExit"), toc=$("epubToc"), dbg=$("epubDrawerBg"), md=$("epubMode");
+  if(fp) fp.onclick=()=>{ epubSetPref({fs:Math.min(30,(epubPref().fs||19)+1)}); repaginate(); };
+  if(fm) fm.onclick=()=>{ epubSetPref({fs:Math.max(13,(epubPref().fs||19)-1)}); repaginate(); };
+  if(wb) wb.onclick=()=>{ const cur=epubPref().w||"narrow"; epubSetPref({w: cur==="narrow"?"wide":(cur==="wide"?"full":"narrow")}); repaginate(); };
+  if(ln) ln.onclick=()=>{ const steps=[1.5,1.75,2.05]; const cur=epubPref().lh||1.75; epubSetPref({lh: steps[(steps.indexOf(cur)+1)%steps.length]||1.75}); repaginate(); };
   if(tb) tb.onclick=()=>epubSetPref({theme: epubPref().theme==="sepia"?"":"sepia"});
+  if(md) md.onclick=()=>{ const f=curFrac(); epubSetPref({mode: epubIsPaged()?"scroll":"page"}); if(state.epub) renderChapter(state.epub.idx, f); };
   if(im) im.onclick=()=>document.body.classList.add("epub-immersive");
   if(ex) ex.onclick=()=>document.body.classList.remove("epub-immersive");
   if(toc) toc.onclick=openEpubDrawer; if(dbg) dbg.onclick=closeEpubDrawer;
   if(sc){ let t; sc.addEventListener("scroll",()=>{ updateEpubProgress(); hideHlBar(); hideHlMenu(); clearTimeout(t); t=setTimeout(epubSavePos,600); }); }
+  window.addEventListener("resize",()=>{ if(document.body.classList.contains("mode-epub")) repaginate(); });
+  document.addEventListener("keydown",e=>{ if(!document.body.classList.contains("mode-epub")) return; const tg=(e.target.tagName||"").toLowerCase(); if(tg==="input"||tg==="textarea"||e.target.isContentEditable) return; if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); turnFwd(); } else if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); turnBack(); } });
   // Touch/click gestures: tap zones (left→prev, right→next, centre→toggle chrome),
   // horizontal swipe → chapter turn, text selection → highlight bar, tap on a
   // highlight → its menu.
@@ -1043,11 +1092,11 @@ function toggleImmersive(on){ document.body.classList.toggle("epub-immersive", o
       hideHlBar();
       if(!moved && onMark){ openHlMenu(onMark); return; }    // tap a highlight → edit/note/remove
       hideHlMenu();
-      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){ if(dx<0) goNext(); else goPrev(); return; }  // swipe
+      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){ if(dx<0) turnFwd(); else turnBack(); return; }  // swipe → page/chapter
       const onLink=e.target.closest && e.target.closest("a,img,button,mark");
       if(!moved && dt<350 && !onLink){
         const zone=(e.clientX - sc.getBoundingClientRect().left)/sc.clientWidth;
-        if(zone<0.22) goPrev(); else if(zone>0.78) goNext();
+        if(zone<0.22) turnBack(); else if(zone>0.78) turnFwd();
         else document.body.classList.toggle("epub-immersive");   // centre → hide/show chrome
       }
     });
