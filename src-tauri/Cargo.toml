@@ -1,6 +1,6 @@
 [package]
 name = "pdf-studio"
-version = "3.10.1"
+version = "3.10.2"
 description = "PDF Studio - private, offline PDF reader & editor"
 edition = "2021"
 
