@@ -1,0 +1,8 @@
+{
+  "appId": "com.everflow.pdfstudio",
+  "appName": "PDF Studio",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

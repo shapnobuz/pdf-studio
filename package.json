@@ -1,0 +1,18 @@
+{
+  "name": "pdf-studio-mobile",
+  "version": "3.10.3",
+  "private": true,
+  "description": "PDF Studio — Android wrapper (Capacitor) around the offline web app in dist/",
+  "scripts": {
+    "sync": "cap sync",
+    "add:android": "cap add android",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6",
+    "@capacitor/core": "^6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6"
+  }
+}
