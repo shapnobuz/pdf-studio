@@ -326,6 +326,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .epub-hl-item:hover{background:var(--panel-2);}
   .epub-hl-text{font-size:13px;line-height:1.4;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .epub-hl-note{font-size:12px;color:var(--muted);margin-top:3px;}
+  .hl-pop .hl-dict{border:none;border-left:1px solid var(--border);margin-left:3px;padding:4px 9px;background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px;}
+  .hl-pop .hl-dict:hover{background:var(--panel-2);}
+  .dict-pop{width:250px;gap:6px;}
+  .dict-pop .dict-word{font-size:16px;font-weight:700;color:var(--text);}
+  .dict-pop .dict-mean{font-size:14px;color:var(--text);line-height:1.5;}
+  .dict-pop .dict-link{font-size:12px;color:var(--accent);text-decoration:none;}
+  .dict-pop .dict-link:hover{text-decoration:underline;}
   /* Library / bookshelf */
   .library{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--workspace);overflow:hidden;}
   .library.hidden{display:none;}
@@ -1021,6 +1028,7 @@ function showHlBar(){
   const rect=sel.getRangeAt(0).getBoundingClientRect(); const host=$("epubReader"); const hr=host.getBoundingClientRect();
   const bar=document.createElement("div"); bar.className="hl-pop";
   HL_COLORS.forEach(([col,name])=>{ const d=document.createElement("button"); d.className="sw sw-"+col; d.title=name; d.onpointerdown=e=>e.preventDefault(); d.onclick=()=>createHl(col); bar.appendChild(d); });
+  const dic=document.createElement("button"); dic.className="hl-dict"; dic.textContent="অর্থ"; dic.title="অভিধান"; dic.onpointerdown=e=>e.preventDefault(); dic.onclick=()=>{ const t=window.getSelection().toString(); showDict(t); }; bar.appendChild(dic);
   host.appendChild(bar); const bw=bar.offsetWidth,bh=bar.offsetHeight;
   let left=rect.left-hr.left+rect.width/2-bw/2; left=Math.max(6,Math.min(hr.width-bw-6,left));
   let top=rect.top-hr.top-bh-8; if(top<6) top=rect.bottom-hr.top+8;
@@ -1040,6 +1048,45 @@ function openHlMenu(mark){
   let left=rect.left-hr.left; left=Math.max(6,Math.min(hr.width-bw-6,left));
   let top=rect.bottom-hr.top+8; if(top+bh>hr.height-6) top=rect.top-hr.top-bh-8;
   box.style.left=left+"px"; box.style.top=Math.max(6,top)+"px"; _hlMenu=box; ta.focus();
+}
+
+/* ---- Tap dictionary: select a word → meaning. Ships a small offline
+   English→Bengali starter glossary (expandable); falls back to Wiktionary. ---- */
+const DICT={
+  the:"নির্দিষ্টতাসূচক পদ",and:"এবং, ও",but:"কিন্তু",with:"সঙ্গে, সহ",without:"ছাড়া, ব্যতীত",
+  because:"কারণ",although:"যদিও",however:"তবে, যাই হোক",therefore:"অতএব, সুতরাং",perhaps:"সম্ভবত, হয়তো",
+  beautiful:"সুন্দর",wonder:"বিস্ময়; ভাবা",wonderful:"চমৎকার, অপূর্ব",silence:"নীরবতা",silent:"নীরব, নিঃশব্দ",
+  memory:"স্মৃতি",memories:"স্মৃতিসমূহ",remember:"মনে রাখা",forget:"ভুলে যাওয়া",dream:"স্বপ্ন",
+  hope:"আশা",fear:"ভয়",courage:"সাহস",lonely:"নিঃসঙ্গ",loneliness:"নিঃসঙ্গতা",
+  journey:"যাত্রা",destiny:"নিয়তি, ভাগ্য",freedom:"স্বাধীনতা",wisdom:"প্রজ্ঞা, জ্ঞান",knowledge:"জ্ঞান",
+  truth:"সত্য",lie:"মিথ্যা; শোয়া",promise:"প্রতিশ্রুতি",betray:"বিশ্বাসঘাতকতা করা",forgive:"ক্ষমা করা",
+  gentle:"কোমল, মৃদু",tender:"স্নেহশীল, কোমল",cruel:"নিষ্ঠুর",kind:"দয়ালু; প্রকার",kindness:"দয়া",
+  grief:"শোক",sorrow:"দুঃখ",joy:"আনন্দ",delight:"আনন্দ, খুশি",despair:"হতাশা",
+  ancient:"প্রাচীন",eternal:"চিরন্তন",distant:"দূরবর্তী",horizon:"দিগন্ত",twilight:"গোধূলি",
+  dawn:"ঊষা, ভোর",dusk:"সন্ধ্যা",shadow:"ছায়া",whisper:"ফিসফিস করা",echo:"প্রতিধ্বনি",
+  wander:"ঘুরে বেড়ানো",wanderer:"পরিব্রাজক",stranger:"অচেনা লোক",familiar:"পরিচিত",fragile:"ভঙ্গুর",
+  fate:"নিয়তি",soul:"আত্মা",spirit:"আত্মা, প্রাণ",heart:"হৃদয়",mind:"মন",
+  wisely:"বিচক্ষণতার সাথে",bravery:"সাহসিকতা",curious:"কৌতূহলী",curiosity:"কৌতূহল",wonderment:"বিস্ময়",
+  ocean:"সমুদ্র",mountain:"পর্বত",valley:"উপত্যকা",forest:"অরণ্য",desert:"মরুভূমি",
+  river:"নদী",stream:"স্রোত, ঝর্ণা",meadow:"তৃণভূমি",harvest:"ফসল",autumn:"শরৎ",
+  gaze:"একদৃষ্টে তাকানো",glance:"আড়চোখে দেখা",embrace:"আলিঙ্গন",cherish:"লালন করা",longing:"আকুলতা",
+  yearn:"ব্যাকুল হওয়া",sigh:"দীর্ঘশ্বাস",weep:"কাঁদা",laughter:"হাসি",tremble:"কাঁপা",
+  serene:"প্রশান্ত",solitude:"নির্জনতা",melancholy:"বিষণ্ণতা",nostalgia:"স্মৃতিকাতরতা",bliss:"পরমানন্দ"
+};
+function dictLookup(term){ const w=(term||"").toLowerCase().replace(/[^a-zঀ-৿]+/g,"").trim(); return {word:w, meaning:DICT[w]||null}; }
+function showDict(term){
+  hideHlBar(); hideHlMenu();
+  const sel=window.getSelection(); let rect=null; if(sel&&sel.rangeCount&&sel.toString().trim()) rect=sel.getRangeAt(0).getBoundingClientRect();
+  const {word,meaning}=dictLookup(term); const host=$("epubReader"); if(!host) return; const hr=host.getBoundingClientRect();
+  const box=document.createElement("div"); box.className="hl-menu dict-pop";
+  const h=document.createElement("div"); h.className="dict-word"; h.textContent=word||(term||"").trim();
+  const m=document.createElement("div"); m.className="dict-mean"; m.textContent=meaning||"অফলাইন অভিধানে এই শব্দটি নেই।";
+  const a=document.createElement("a"); a.className="dict-link"; a.target="_blank"; a.rel="noopener"; a.textContent="Wiktionary-তে দেখুন ↗"; a.href="https://en.wiktionary.org/wiki/"+encodeURIComponent(word||(term||"").trim());
+  box.appendChild(h); box.appendChild(m); box.appendChild(a); host.appendChild(box);
+  const bw=box.offsetWidth,bh=box.offsetHeight; let left=6,top=6;
+  if(rect){ left=rect.left-hr.left; left=Math.max(6,Math.min(hr.width-bw-6,left)); top=rect.bottom-hr.top+8; if(top+bh>hr.height-6) top=rect.top-hr.top-bh-8; }
+  box.style.left=left+"px"; box.style.top=Math.max(6,top)+"px"; _hlMenu=box;
+  if(sel) sel.removeAllRanges();
 }
 
 function enterEpubReader(){
