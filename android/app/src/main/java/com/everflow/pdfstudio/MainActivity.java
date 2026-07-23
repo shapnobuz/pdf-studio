@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -25,12 +24,6 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Enable two-finger pinch-zoom in the WebView (useful for PDF pages).
-        WebSettings s = getBridge().getWebView().getSettings();
-        s.setSupportZoom(true);
-        s.setBuiltInZoomControls(true);
-        s.setDisplayZoomControls(false);
 
         // Let the web app pull any file this activity was launched with.
         getBridge().getWebView().addJavascriptInterface(new FileBridge(), "AndroidFile");
