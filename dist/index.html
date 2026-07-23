@@ -302,6 +302,26 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .epub-drawer-list .epub-toc{padding:12px;font-size:15px;line-height:1.4;border-radius:9px;cursor:pointer;color:var(--text);}
   .epub-drawer-list .epub-toc:hover{background:var(--panel-2);}
   .epub-drawer-list .epub-toc.active{background:var(--accent-weak);color:var(--accent);font-weight:600;}
+  /* highlights */
+  .epub-content mark.ehl{background-color:var(--hl,rgba(255,214,0,.45));color:inherit;border-radius:2px;padding:0 1px;cursor:pointer;}
+  .ehl-y{--hl:rgba(255,205,0,.5);} .ehl-g{--hl:rgba(70,200,120,.45);} .ehl-b{--hl:rgba(90,160,255,.42);} .ehl-p{--hl:rgba(255,110,170,.45);}
+  mark.ehl.has-note{border-bottom:2px dotted rgba(0,0,0,.4);}
+  [data-theme="dark"] mark.ehl{color:#0d131b;} [data-theme="dark"] mark.ehl.has-note{border-bottom-color:rgba(0,0,0,.5);}
+  .hl-pop,.hl-menu{position:absolute;z-index:12;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.28);padding:7px;}
+  .hl-pop{display:flex;gap:7px;align-items:center;}
+  .hl-menu{width:250px;display:flex;flex-direction:column;gap:8px;}
+  .hl-row{display:flex;gap:7px;align-items:center;}
+  .hl-pop .sw,.hl-row .sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;}
+  .hl-row .sw.on{border-color:var(--text);}
+  .sw-y{background:#ffcd00;} .sw-g{background:#46c878;} .sw-b{background:#5aa0ff;} .sw-p{background:#ff6eaa;}
+  .hl-del{margin-left:auto;border:none;background:transparent;color:#e5484d;cursor:pointer;font:inherit;font-size:13px;font-weight:600;border-radius:6px;padding:4px 8px;}
+  .hl-del:hover{background:rgba(229,72,77,.12);}
+  .hl-menu textarea{width:100%;min-height:58px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);color:var(--text);font:inherit;font-size:13px;padding:7px;resize:vertical;outline:none;}
+  .hl-menu textarea:focus{border-color:var(--accent);}
+  .epub-hl-item{padding:9px 12px;border-radius:9px;cursor:pointer;border-left:3px solid var(--hl,#ffcd00);margin:3px 0;}
+  .epub-hl-item:hover{background:var(--panel-2);}
+  .epub-hl-text{font-size:13px;line-height:1.4;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .epub-hl-note{font-size:12px;color:var(--muted);margin-top:3px;}
   /* Library / bookshelf */
   .library{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--workspace);overflow:hidden;}
   .library.hidden{display:none;}
@@ -816,6 +836,7 @@ async function openEpub(bytes){
   }catch(e){}
   exitEpubReader();                                 // clear any previous book
   state.pdfDoc=null; state.epub={ zip, base, manifest, spine, meta, toc, blobUrls:[], idx:0 };
+  loadHls();
   enterEpubReader();
   const pos=epubLoadPos();
   await renderChapter(Math.min(spine.length-1, Math.max(0, pos.i||0)), pos.frac||0);
@@ -863,6 +884,7 @@ async function renderChapter(i, frac){
     }catch(e){}
   }
   content.innerHTML=body.innerHTML;
+  hideHlBar(); hideHlMenu(); applyHls();
   const sc=$("epubScroll"); sc.scrollTop = (frac>0)?frac*Math.max(1, sc.scrollHeight-sc.clientHeight):0;
   $("epubTitle").textContent=ep.meta.title + (ep.meta.author?(" — "+ep.meta.author):"");
   applyEpubPref(); updateEpubProgress(); epubSavePos(); renderEpubToc();
@@ -880,6 +902,18 @@ function renderEpubToc(){
     row.addEventListener("click",()=>{ if(si>=0){ renderChapter(si,0); closeEpubDrawer(); } });
     p.appendChild(row);
   });
+  const hls=ep.hls||[];
+  if(hls.length){
+    const hh=document.createElement("div"); hh.className="epub-drawer-h"; hh.style.marginTop="10px"; hh.textContent="হাইলাইট ("+hls.length+")"; p.appendChild(hh);
+    hls.slice().sort((a,b)=> a.ch-b.ch || a.s-b.s).forEach(h=>{
+      const r=document.createElement("div"); r.className="epub-hl-item ehl-"+(h.color||"y");
+      const q=document.createElement("div"); q.className="epub-hl-text"; q.textContent=h.text||"(হাইলাইট)";
+      r.appendChild(q);
+      if(h.note){ const n=document.createElement("div"); n.className="epub-hl-note"; n.textContent="✎ "+h.note; r.appendChild(n); }
+      r.addEventListener("click",()=>{ closeEpubDrawer(); renderChapter(h.ch,0); setTimeout(()=>{ const m=$("epubContent").querySelector('mark[data-hlid="'+h.id+'"]'); if(m) m.scrollIntoView({block:"center"}); },80); });
+      p.appendChild(r);
+    });
+  }
 }
 function openEpubDrawer(){ const d=$("epubDrawer"); if(d) d.classList.remove("hidden"); }
 function closeEpubDrawer(){ const d=$("epubDrawer"); if(d) d.classList.add("hidden"); }
@@ -903,6 +937,65 @@ function applyEpubPref(){
   c.style.setProperty("--er-lh",(p.lh||1.75));
   c.style.setProperty("--er-w", p.w==="wide"?"46rem":(p.w==="full"?"100%":"34rem"));
   r.classList.toggle("er-sepia", p.theme==="sepia");
+}
+
+/* ---- EPUB highlights & notes: per-book, anchored by character offset so they
+   survive reflow (font/width/theme changes). Stored in localStorage. ---- */
+function hlKey(){ return "pdfstudio-epubhl-"+epubFP(); }
+function loadHls(){ try{ state.epub.hls=JSON.parse(localStorage.getItem(hlKey()))||[]; }catch(e){ state.epub.hls=[]; } }
+function saveHls(){ try{ localStorage.setItem(hlKey(), JSON.stringify(state.epub.hls||[])); }catch(e){} }
+function hlTextOffset(root,node,off){ const r=document.createRange(); r.selectNodeContents(root); try{ r.setEnd(node,off); }catch(e){ return 0; } return r.toString().length; }
+function curFrac(){ const sc=$("epubScroll"); return sc.scrollHeight>sc.clientHeight?sc.scrollTop/(sc.scrollHeight-sc.clientHeight):0; }
+function reflowKeepScroll(){ renderChapter(state.epub.idx, curFrac()); }
+function applyHls(){
+  const ep=state.epub, c=$("epubContent"); if(!ep||!c) return;
+  (ep.hls||[]).filter(h=>h.ch===ep.idx).sort((a,b)=>b.s-a.s).forEach(h=>hlWrap(c,h));
+}
+function hlWrap(root,h){
+  if(h.e<=h.s) return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null); let pos=0,node; const segs=[];
+  while((node=walker.nextNode())){ const len=node.nodeValue.length, ns=pos, ne=pos+len; const a=Math.max(h.s,ns), bnd=Math.min(h.e,ne); if(a<bnd) segs.push({node,from:a-ns,to:bnd-ns}); pos=ne; if(pos>=h.e) break; }
+  segs.reverse().forEach(sg=>{ try{ const r=document.createRange(); r.setStart(sg.node,sg.from); r.setEnd(sg.node,sg.to); const m=document.createElement("mark"); m.className="ehl ehl-"+(h.color||"y")+(h.note?" has-note":""); m.dataset.hlid=h.id; r.surroundContents(m); }catch(e){} });
+}
+function createHl(color){
+  const ep=state.epub; if(!ep) return; const sel=window.getSelection(); if(!sel||!sel.rangeCount) return;
+  const c=$("epubContent"); const range=sel.getRangeAt(0); const txt=sel.toString(); if(!txt.trim()) return;
+  if(!c.contains(range.commonAncestorContainer)) return;
+  const s=hlTextOffset(c,range.startContainer,range.startOffset); const e=s+txt.length;
+  const h={id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), ch:ep.idx, s, e, color, note:"", text:txt.replace(/\s+/g,' ').trim().slice(0,140)};
+  ep.hls=ep.hls||[]; ep.hls.push(h); saveHls(); sel.removeAllRanges(); hideHlBar(); reflowKeepScroll();
+}
+function removeHl(id){ const ep=state.epub; if(!ep) return; ep.hls=(ep.hls||[]).filter(h=>h.id!==id); saveHls(); hideHlMenu(); reflowKeepScroll(); }
+function setHlColor(id,color){ const h=(state.epub.hls||[]).find(x=>x.id===id); if(!h) return; h.color=color; saveHls(); reflowKeepScroll(); }
+function setHlNote(id,note){ const h=(state.epub.hls||[]).find(x=>x.id===id); if(!h) return; h.note=note; saveHls(); reflowKeepScroll(); }
+const HL_COLORS=[["y","হলুদ"],["g","সবুজ"],["b","নীল"],["p","গোলাপি"]];
+let _hlBar=null,_hlMenu=null;
+function hideHlBar(){ if(_hlBar){ _hlBar.remove(); _hlBar=null; } }
+function hideHlMenu(){ if(_hlMenu){ _hlMenu.remove(); _hlMenu=null; } }
+function showHlBar(){
+  hideHlBar(); const sel=window.getSelection(); if(!sel||!sel.rangeCount||!sel.toString().trim()) return;
+  const rect=sel.getRangeAt(0).getBoundingClientRect(); const host=$("epubReader"); const hr=host.getBoundingClientRect();
+  const bar=document.createElement("div"); bar.className="hl-pop";
+  HL_COLORS.forEach(([col,name])=>{ const d=document.createElement("button"); d.className="sw sw-"+col; d.title=name; d.onpointerdown=e=>e.preventDefault(); d.onclick=()=>createHl(col); bar.appendChild(d); });
+  host.appendChild(bar); const bw=bar.offsetWidth,bh=bar.offsetHeight;
+  let left=rect.left-hr.left+rect.width/2-bw/2; left=Math.max(6,Math.min(hr.width-bw-6,left));
+  let top=rect.top-hr.top-bh-8; if(top<6) top=rect.bottom-hr.top+8;
+  bar.style.left=left+"px"; bar.style.top=top+"px"; _hlBar=bar;
+}
+function openHlMenu(mark){
+  hideHlMenu(); const id=mark.dataset.hlid; const h=(state.epub.hls||[]).find(x=>x.id===id); if(!h) return;
+  const host=$("epubReader"); const hr=host.getBoundingClientRect(); const rect=mark.getBoundingClientRect();
+  const box=document.createElement("div"); box.className="hl-menu";
+  const row=document.createElement("div"); row.className="hl-row";
+  HL_COLORS.forEach(([col])=>{ const d=document.createElement("button"); d.className="sw sw-"+col+(h.color===col?" on":""); d.onclick=()=>setHlColor(id,col); row.appendChild(d); });
+  const del=document.createElement("button"); del.className="hl-del"; del.textContent="মুছুন"; del.onclick=()=>removeHl(id);
+  row.appendChild(del);
+  const ta=document.createElement("textarea"); ta.placeholder="নোট লিখুন…"; ta.value=h.note||""; ta.onchange=()=>setHlNote(id,ta.value.trim());
+  box.appendChild(row); box.appendChild(ta); host.appendChild(box);
+  const bw=box.offsetWidth,bh=box.offsetHeight;
+  let left=rect.left-hr.left; left=Math.max(6,Math.min(hr.width-bw-6,left));
+  let top=rect.bottom-hr.top+8; if(top+bh>hr.height-6) top=rect.top-hr.top-bh-8;
+  box.style.left=left+"px"; box.style.top=Math.max(6,top)+"px"; _hlMenu=box; ta.focus();
 }
 
 function enterEpubReader(){
@@ -934,20 +1027,25 @@ function toggleImmersive(on){ document.body.classList.toggle("epub-immersive", o
   if(im) im.onclick=()=>document.body.classList.add("epub-immersive");
   if(ex) ex.onclick=()=>document.body.classList.remove("epub-immersive");
   if(toc) toc.onclick=openEpubDrawer; if(dbg) dbg.onclick=closeEpubDrawer;
-  if(sc){ let t; sc.addEventListener("scroll",()=>{ updateEpubProgress(); clearTimeout(t); t=setTimeout(epubSavePos,600); }); }
-  // Touch/click gestures: tap zones (left→prev, right→next, centre→toggle chrome) + horizontal swipe
+  if(sc){ let t; sc.addEventListener("scroll",()=>{ updateEpubProgress(); hideHlBar(); hideHlMenu(); clearTimeout(t); t=setTimeout(epubSavePos,600); }); }
+  // Touch/click gestures: tap zones (left→prev, right→next, centre→toggle chrome),
+  // horizontal swipe → chapter turn, text selection → highlight bar, tap on a
+  // highlight → its menu.
   if(sc){
     let x0=0,y0=0,t0=0,moved=false;
     sc.addEventListener("pointerdown",e=>{ x0=e.clientX; y0=e.clientY; t0=Date.now(); moved=false; });
     sc.addEventListener("pointermove",e=>{ if(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10) moved=true; });
     sc.addEventListener("pointerup",e=>{
       const dx=e.clientX-x0, dy=e.clientY-y0, dt=Date.now()-t0;
-      // horizontal swipe → chapter turn
-      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){ if(dx<0) goNext(); else goPrev(); return; }
-      // discrete tap (no drag, quick, nothing selected, not on a link/image)
-      const sel=window.getSelection && window.getSelection(); const selecting=sel && sel.toString && sel.toString().length>0;
-      const onLink=e.target.closest && e.target.closest("a,img,button");
-      if(!moved && dt<350 && !selecting && !onLink){
+      const onMark=e.target.closest && e.target.closest("mark.ehl");
+      const sel=window.getSelection && window.getSelection(); const selecting=sel && sel.toString && sel.toString().trim().length>0;
+      if(selecting){ showHlBar(); return; }                 // selection → offer to highlight
+      hideHlBar();
+      if(!moved && onMark){ openHlMenu(onMark); return; }    // tap a highlight → edit/note/remove
+      hideHlMenu();
+      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.6){ if(dx<0) goNext(); else goPrev(); return; }  // swipe
+      const onLink=e.target.closest && e.target.closest("a,img,button,mark");
+      if(!moved && dt<350 && !onLink){
         const zone=(e.clientX - sc.getBoundingClientRect().left)/sc.clientWidth;
         if(zone<0.22) goPrev(); else if(zone>0.78) goNext();
         else document.body.classList.toggle("epub-immersive");   // centre → hide/show chrome
