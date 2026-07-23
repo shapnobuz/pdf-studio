@@ -1,10 +1,11 @@
 name: release
 
 # Two ways to trigger this:
-#   1. Push a version tag:  `git tag v3.10.2 && git push --tags`
-#   2. Run it manually from the Actions tab (or the API) via workflow_dispatch,
-#      passing the version (e.g. `v3.10.2`) — tauri-action then creates that tag
-#      and release for you. Handy when tag pushes aren't available.
+#   1. Touch the `.release-trigger` file and push to main — the version is read
+#      from src-tauri/tauri.conf.json and tauri-action creates that tag + release.
+#      (Handy where pushing git tags directly isn't allowed.)
+#   2. Run it manually from the Actions tab via workflow_dispatch, optionally
+#      overriding the version.
 # Either way it builds the Windows installer, signs it with your Tauri signing
 # key (stored as repo secrets — see AUTO_UPDATE_SETUP_BN.md), and publishes it
 # as a GitHub Release together with the `latest.json` manifest the app's updater
@@ -16,14 +17,14 @@ name: release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths: [".release-trigger"]
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag to create and release, e.g. v3.10.1"
-        required: true
-        default: "v3.10.1"
+        description: "Version tag override (blank = read from tauri.conf.json)"
+        required: false
+        default: ""
 
 jobs:
   release:
@@ -41,6 +42,16 @@ jobs:
         with:
           node-version: 20
 
+      # Resolve the version tag: the workflow_dispatch override if given, else
+      # v<version> read straight from src-tauri/tauri.conf.json.
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then V="${{ github.event.inputs.version }}";
+          else V="v$(node -p "require('./src-tauri/tauri.conf.json').version")"; fi
+          echo "tag=$V" >> "$GITHUB_OUTPUT"
+
       # tauri.conf.json's bundle.icon points at src-tauri/icons/*, which are
       # generated from src-tauri/logo.png (the single source of truth) and are
       # not committed. Regenerate them here so the bundler finds them.
@@ -55,7 +66,7 @@ jobs:
         id: notes
         shell: bash
         run: |
-          VERSION="${{ inputs.version || github.ref_name }}"
+          VERSION="${{ steps.ver.outputs.tag }}"
           VERSION="${VERSION#v}"
           section=""
           if [ -f CHANGELOG.md ]; then
@@ -90,8 +101,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ inputs.version || github.ref_name }}
-          releaseName: "PDF Studio ${{ inputs.version || github.ref_name }}"
+          tagName: ${{ steps.ver.outputs.tag }}
+          releaseName: "PDF Studio ${{ steps.ver.outputs.tag }}"
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
