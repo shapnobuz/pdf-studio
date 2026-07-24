@@ -1267,22 +1267,44 @@ function loadBnDict(){
 const BN_CONF=(()=>{ const groups=[
   ["শ","স","ষ"],["ন","ণ"],["র","ব","ভ"],["য","য়","জ"],["ড","ড়"],["ঢ","ঢ়"],
   ["ই","ঈ"],["উ","ঊ"],["ও","ঔ"],["দ","ধ"],["ক","ফ"],["গ","ণ"],["থ","ঘ"],
-  ["ি","ী"],["ু","ূ"],["ো","ৌ"],["ে","ৈ"] ];
+  ["হ","ছ"],["ঙ","ঞ"],["ত","ৎ"],["প","শ"],["ঝ","ঋ"],["ঠ","ট"],["চ","ছ"],
+  ["ি","ী"],["ু","ূ"],["ো","ৌ"],["ে","ৈ"],["ৃ","ু"],["া","ো"] ];
   const m={}; for(const g of groups) for(const a of g){ (m[a]=m[a]||[]); for(const b of g) if(b!==a) m[a].push(b); } return m; })();
+const BN_CONS="[\\u0995-\\u09B9\\u09CE\\u09DC-\\u09DF]";   // a Bengali consonant (escape-safe)
+const BN_VSIGN=["া","ি","ী","ু","ূ","ে","ৈ","ো","ৌ","ৃ"];  // post-base vowel signs
+const RE_VSIGN=/[া-ৄেৈোৌ]/;                                 // any dependent vowel sign
 const BN_COMBINING=/^[ঁ-ঃা-ৌ্ৗৢৣ]/;   // marks that can't begin a word
+const RE_CLUSTER=new RegExp("^((?:"+BN_CONS+"্)*"+BN_CONS+")([\\s\\S]*)$");
 function bnKnown(w){ return !!(BN_WORDS && BN_WORDS.has(w)); }
-function bnCorrectWord(w){
+function bnCorrectWord(w, broken){
   if(!BN_WORDS || !w || w.length<2) return w;
   const m=w.match(/^([^ঀ-৿]*)([ঀ-৿][\s\S]*[ঀ-৿]|[ঀ-৿])([^ঀ-৿]*)$/);
   if(!m) return w;
-  const pre=m[1], core=m[2], post=m[3];
-  if(core.length<2 || BN_WORDS.has(core)) return w;
+  let pre=m[1]; const core=m[2], post=m[3];
+  // Broken-ekar artifact: a word-initial hyphen glued to Bengali is a pre-base
+  // vowel the font lost. Only in broken mode, so clean docs' hyphens are safe.
+  if(broken && /^[-–]$/.test(pre)){
+    if(BN_WORDS.has(core)) return core+post;                 // hyphen was spurious → drop
+    const cm=core.match(RE_CLUSTER);
+    if(cm){ let bb=null,brk=Infinity; for(const v of ["ে","ি","ৈ","ো","ৌ"]){ const c=cm[1]+v+cm[2]; if(BN_WORDS.has(c)){ const r=BN_RANK.get(c); if(r<brk){brk=r;bb=c;} } } if(bb) return bb+post; }
+    // couldn't validate: drop the hyphen if the cluster already carries a vowel, else insert ে
+    const cm2=core.match(RE_CLUSTER);
+    if(cm2 && RE_VSIGN.test(cm2[1])) return core+post;
+    if(cm2) return cm2[1]+"ে"+cm2[2]+post;
+    pre="";
+  }
+  if(core.length<2 || BN_WORDS.has(core)) return pre+core+post;
   const chars=[...core]; let best=null, bestRank=Infinity;
-  const take=cand=>{ if(BN_WORDS.has(cand)){ const r=BN_RANK.get(cand); if(r<bestRank){ bestRank=r; best=cand; } } };
+  const take=cand=>{ if(cand!==core && BN_WORDS.has(cand)){ const r=BN_RANK.get(cand); if(r<bestRank){ bestRank=r; best=cand; } } };
+  // 0) visual-order → logical (pre-base vowel stored before its consonant).
+  //    Dict-gated, so a correct-but-unknown word is never scrambled.
+  take(fixBengaliOrder(core));
+  // 1) confusion substitution (single char from a known-confusable class).
+  //    Deliberately no free insert/delete of characters — that eats proper
+  //    nouns (e.g. names one edit from a common word). Structural fixes only.
   for(let i=0;i<chars.length;i++){ const alts=BN_CONF[chars[i]]; if(!alts) continue;
     for(const a of alts) take(chars.slice(0,i).join("")+a+chars.slice(i+1).join("")); }
-  if(chars.length>3) for(let i=0;i<chars.length;i++) take(chars.slice(0,i).join("")+chars.slice(i+1).join(""));  // drop a stray mark
-  return best ? (pre+best+post) : w;
+  return best ? (pre+best+post) : (pre+core+post);
 }
 /* Fix spurious spaces: a combining mark can never start a word, so glue it back;
    also merge an adjacent split when the join is a real word but the left half isn't. */
@@ -1299,11 +1321,17 @@ function bnFixSpaces(text){
 /* One-stop Bengali repair for a line/paragraph. */
 function bnRepair(text, broken){
   if(!text) return text;
-  text=fixBengaliOrder(text);
-  if(broken) text=fixBrokenEkar(text);
+  try{ text=text.normalize("NFC"); }catch(e){}
+  if(!BN_WORDS){                                    // no dictionary → blind heuristics
+    text=fixBengaliOrder(text);
+    if(broken) text=fixBrokenEkar(text);
+    return text;
+  }
+  // With the dictionary, every change is validated against a real word, so
+  // reorder is applied per-word (dict-gated) instead of globally — correct
+  // words are left exactly as they are.
   text=bnFixSpaces(text);
-  if(BN_WORDS) text=text.replace(/\S+/g, w=> /[ঀ-৿]/.test(w)? bnCorrectWord(w) : w);
-  return text;
+  return text.replace(/\S+/g, w=> /[ঀ-৿]/.test(w)? bnCorrectWord(w, broken) : w);
 }
 async function openLiquid(){
   if(!state.pdfDoc){ toast("আগে একটা PDF খুলুন",""); return; }
