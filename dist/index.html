@@ -124,7 +124,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   body.mode-lib #toggleSidebar, body.mode-lib #libBtn, body.mode-lib #readModeBtn,
   body.mode-lib #liquidBtn, body.mode-lib #undoBtn, body.mode-lib #redoBtn,
   body.mode-lib .zoom, body.mode-lib #searchWrap, body.mode-lib #exportBtn,
-  body.mode-lib #moreBtn, body.mode-lib .topbar .divider{display:none !important}
+  body.mode-lib #moreBtn, body.mode-lib #searchToggle, body.mode-lib .topbar .divider{display:none !important}
   .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em;padding-right:8px;white-space:nowrap}
   .brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#7c74ff);
     display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px rgba(79,70,229,.4)}
@@ -385,6 +385,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .book-del:hover{color:#e5484d;background:rgba(229,72,77,.12);}
   /* Book Reading Mode — hide the editing toolbar, keep a clean reading surface */
   body.reading-mode #toolsbar{display:none;}
+  /* strip editing/processing chrome from the top bar too */
+  body.reading-mode #undoBtn, body.reading-mode #redoBtn, body.reading-mode #exportBtn,
+  body.reading-mode .zoom, body.reading-mode .topbar .divider{display:none;}
+  /* trim the ⋯ menu to reading-relevant items (OCR / Print / Close) */
+  body.reading-mode #moreMenu #mMerge, body.reading-mode #moreMenu #mExtract,
+  body.reading-mode #moreMenu #mFlatten, body.reading-mode #moreMenu #mImgToPdf,
+  body.reading-mode #moreMenu #mPdfToImg, body.reading-mode #moreMenu #mPdfToWord,
+  body.reading-mode #moreMenu #mSearchable, body.reading-mode #moreMenu #mExportText,
+  body.reading-mode #moreMenu #mBates, body.reading-mode #moreMenu .sep,
+  body.reading-mode #moreMenu .note{display:none !important;}
+  /* a compact search toggle for narrow screens (the inline field is hidden there) */
+  #searchToggle{display:none;}
+  body.search-open .search{display:flex !important}
+  @media (max-width:760px){
+    #searchToggle{display:inline-flex;}
+    body.search-open .search{position:absolute;left:8px;right:8px;top:calc(var(--tb-h) + 4px);z-index:60;
+      background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:4px 8px;}
+  }
   #readModeBtn.rm-on{background:var(--accent);color:#fff;}
   .note-pop{position:absolute;z-index:60;width:232px;background:#fff;border:1px solid rgba(0,0,0,.25);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:8px;display:flex;flex-direction:column;gap:6px;}
   .note-pop-head{font-size:11px;font-weight:600;color:#555;}
@@ -461,7 +479,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .menu .sep{height:1px;background:var(--border);margin:5px 4px}
   .menu .note{font-size:11px;color:var(--muted);padding:4px 11px 6px;line-height:1.4}
 
-  @media (max-width:760px){ .brand small,.search{display:none} :root{--side-w:150px} }
+  @media (max-width:760px){ .brand small,.search{display:none} :root{--side-w:150px}
+    /* icon-only on phones so the top bar fits without scrolling */
+    .topbar{gap:3px;padding:0 8px}
+    .brand{font-size:0;padding-right:4px} .brand .mark{font-size:0}
+    #openBtn,#libBtn,#liquidBtn{font-size:0;gap:0;padding:0 9px} #openBtn svg,#libBtn svg,#liquidBtn svg{margin:0}
+  }
 
   /* edit-existing-text annotation */
   .anno.edit{cursor:move;line-height:1.2;padding:0;display:flex;align-items:flex-start}
@@ -551,6 +574,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <button class="icon-btn" id="searchNext" title="Next (Enter)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
     </div>
   </div>
+  <button class="icon-btn" id="searchToggle" title="Search (খুঁজুন)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
   <button class="icon-btn" id="themeBtn" title="Toggle theme"><svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
   <button class="btn primary" id="exportBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Save PDF</button>
   <button class="icon-btn" id="moreBtn" title="More"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
@@ -3710,6 +3734,11 @@ function applyReadMode(on){ document.body.classList.toggle("reading-mode", !!on)
   let on; try{ const v=localStorage.getItem("pdfstudio-readmode"); on = (v===null) ? (("ontouchstart" in window) || navigator.maxTouchPoints>0) : v==="1"; }catch(e){ on=false; }
   applyReadMode(on);
   const b=$("readModeBtn"); if(b) b.onclick=()=>applyReadMode(!document.body.classList.contains("reading-mode"));
+})();
+/* Mobile search: a toggle reveals the in-document search field as a bar under the top bar */
+(function initSearchToggle(){
+  const t=$("searchToggle"), inp=$("searchInput"); if(!t) return;
+  t.onclick=()=>{ const open=document.body.classList.toggle("search-open"); if(open && inp){ inp.focus(); inp.select&&inp.select(); } };
 })();
 
 /* ---- Android: open a PDF/EPUB handed in by another app via an intent ---- */
