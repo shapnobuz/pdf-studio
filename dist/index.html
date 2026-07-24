@@ -1425,6 +1425,25 @@ function bnRepair(text, broken){
 /* Join Latin words split by a line-end hyphen (inter-\nnational → international).
    Bengali is left alone — it rarely hyphenates and '-' is our broken-ekar signal. */
 function fixHyphenation(t){ return t ? t.replace(/([A-Za-z])[­-]\s+([a-z])/g,"$1$2") : t; }
+/* Is the rendered Liquid text actually readable, or is it garbage from an
+   unknown legacy encoding / a font with no ToUnicode / an image-only scan?
+   Used as a universal net to offer OCR when nothing else could rescue it. */
+function liquidReadable(text){
+  if(!text) return true;                    // nothing to judge → don't nag
+  const tokens=(text.match(/\S+/g)||[]).filter(t=>t.length>=2);
+  if(tokens.length<12) return false;        // almost no text → needs OCR
+  const bn=(text.match(/[ঀ-৿]/g)||[]).length;
+  const sig=(text.match(/[‡†©¤§«»Öø‰ˆŠ›šœ¯®¶µ½¼¾ÝÞßàáâãäåæçèéêëìíîïðñòóôõùúûüýþ]/g)||[]).length;
+  if(sig>8 && bn<sig) return false;         // Win-1252 signature ⇒ some legacy encoding we can't decode
+  let good=0, considered=0;
+  for(const t of tokens){
+    const core=t.replace(/[^ঀ-৿A-Za-z]/g,""); if(core.length<2) continue; considered++;
+    if(/[ঀ-৿]/.test(core)){ if(!BN_WORDS || BN_WORDS.has(core)) good++; }
+    else good++;                             // a plausible Latin word (real English reads fine)
+  }
+  if(considered<8) return false;
+  return good/considered>=0.22;
+}
 /* Drop page numbers and running heads/feet: a page-number-only paragraph, or a
    short edge paragraph (first/last on its page) that repeats across many pages. */
 function stripRunningMatter(blocks, pageCount){
@@ -1486,7 +1505,14 @@ async function openLiquid(){
     parts.push(b.head ? "<h2>"+t+"</h2>" : "<p>"+t+"</p>");
   }
   if(bijoy) toast("লিগ্যাসি (Bijoy) ফন্ট শনাক্ত — Unicode-এ রূপান্তরিত","",5000);
-  const banner = broken ? '<div class="liq-fix" id="liqFixBar"><div><b>এই বইয়ের এমবেডেড লেখা ত্রুটিপূর্ণ</b><span>ে-কার ঠিকমতো আসছে না। আংশিক মেরামত করা হয়েছে; পুরোপুরি পরিষ্কার পড়তে OCR চালান (একবারই, পরে দ্রুত)।</span></div><button id="liqOcrFix">OCR চালিয়ে পরিষ্কার করুন</button></div>' : "";
+  // Universal fallback: if the text isn't readable by any means (unknown legacy
+  // encoding, a font with no ToUnicode, or an image-only scan), offer OCR.
+  const mostlyEmpty = noText >= Math.max(1, Math.ceil(pageNo*0.5));
+  const unreadable = !bijoy && !usedOcr && !broken &&
+    ((rawAll.trim().length>40 && !liquidReadable(rawAll)) || mostlyEmpty);
+  let banner="";
+  if(broken) banner='<div class="liq-fix" id="liqFixBar"><div><b>এই বইয়ের এমবেডেড লেখা ত্রুটিপূর্ণ</b><span>ে-কার ঠিকমতো আসছে না। আংশিক মেরামত করা হয়েছে; পুরোপুরি পরিষ্কার পড়তে OCR চালান (একবারই, পরে দ্রুত)।</span></div><button id="liqOcrFix">OCR চালিয়ে পরিষ্কার করুন</button></div>';
+  else if(unreadable) banner='<div class="liq-fix" id="liqFixBar"><div><b>এই PDF থেকে সরাসরি লেখা পড়া যাচ্ছে না</b><span>অচেনা ফন্ট/এনকোডিং বা স্ক্যান করা পাতা হতে পারে। OCR চালিয়ে বাংলা লেখা তৈরি করুন (একবারই, পরে দ্রুত)।</span></div><button id="liqOcrFix">OCR চালিয়ে পড়ুন</button></div>';
   $("liqContent").innerHTML = banner + (parts.join("") || '<p class="liq-empty">কোনো লেখা পাওয়া যায়নি।</p>');
   const fb=$("liqOcrFix"); if(fb) fb.onclick=async()=>{ await ocrAllPages(); if(!ocrCancel) openLiquid(); };
   $("liqTitle").textContent = (state.fileName||"Document").replace(/\.pdf$/i,"");
