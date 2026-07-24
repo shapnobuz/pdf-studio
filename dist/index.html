@@ -3805,6 +3805,34 @@ window.__checkAndroidFile = async function(){
   }catch(e){ console.warn("android open", e); }
 };
 
+/* Android hardware Back: navigate within the app instead of closing it.
+   MainActivity calls this and only backgrounds the app when it returns false. */
+window.__handleBack = function(){
+  try{
+    const has = id => { const el=$(id); return el && !el.classList.contains("hidden"); };
+    // 1) OCR overlay → cancel it
+    if(has("ocrOverlay")){ if(typeof ocrCancel!=="undefined") ocrCancel=true; return true; }
+    // 2) any open modal (signature, bates, …)
+    const modal=document.querySelector(".modal-bg:not(.hidden)"); if(modal){ modal.classList.add("hidden"); return true; }
+    // 3) the ⋯ menu
+    if(has("moreMenu")){ $("moreMenu").classList.add("hidden"); return true; }
+    // 4) the mobile search bar
+    if(document.body.classList.contains("search-open")){ document.body.classList.remove("search-open"); return true; }
+    // 5) selection / highlight / dictionary popups
+    if(_hlMenu || _hlBar){ hideHlMenu(); hideHlBar(); return true; }
+    const np=document.querySelector(".note-pop"); if(np){ np.remove(); return true; }
+    // 6) Liquid reader → back to the page view
+    if(document.body.classList.contains("mode-liquid")){ closeLiquid(); if(state.pdfDoc) pagesEl.style.display=""; return true; }
+    // 7) EPUB reader → back to the library
+    if(document.body.classList.contains("mode-epub")){ exitEpubReader(); return true; }
+    // 8) Library → back to the open document if there is one
+    if(document.body.classList.contains("mode-lib")){ if(state.pdfDoc || state.epub){ hideLibrary(); return true; } return false; }
+    // 9) A document is open → go to the library (bookshelf)
+    if(state.pdfDoc || state.epub){ showLibrary(); return true; }
+  }catch(e){}
+  return false;   // nothing to go back to → let Android background the app
+};
+
 tauriInit();
 if(window.__checkAndroidFile) window.__checkAndroidFile();
 setTimeout(()=>{ try{ loadBnDict(); }catch(e){} }, 1500);   // warm the Bengali dictionary in the background

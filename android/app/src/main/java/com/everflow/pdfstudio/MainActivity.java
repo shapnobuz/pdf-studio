@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -29,6 +30,23 @@ public class MainActivity extends BridgeActivity {
         getBridge().getWebView().addJavascriptInterface(new FileBridge(), "AndroidFile");
 
         handleIntent(getIntent());
+    }
+
+    // Hardware Back: let the web app navigate within itself first (close a
+    // reader/overlay/menu, go from a document back to the library, …). Only
+    // send the app to the background when the web app has nothing to go back to.
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onBackPressed() {
+        WebView wv = (getBridge() != null) ? getBridge().getWebView() : null;
+        if (wv == null) { moveTaskToBack(true); return; }
+        wv.evaluateJavascript(
+            "(function(){try{return !!(window.__handleBack&&window.__handleBack())}catch(e){return false}})()",
+            value -> {
+                if (value == null || "false".equals(value) || "null".equals(value)) {
+                    runOnUiThread(() -> moveTaskToBack(true));
+                }
+            });
     }
 
     @Override
