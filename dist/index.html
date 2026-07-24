@@ -1185,6 +1185,16 @@ function toggleImmersive(on){ document.body.classList.toggle("epub-immersive", o
    render is untouched. Best on text-heavy PDFs; scanned pages need OCR first.
    ============================================================ */
 function escLiq(s){ return docxEscape(s); }
+/* Bengali PDFs often store glyphs in visual order, so pdf.js extracts pre-base
+   vowel signs (ি ে ৈ ো ৌ) BEFORE their consonant (e.g. "হিসেবে" → "িহেসেব").
+   Move each such sign to after its consonant (cluster) and NFC-normalize. */
+function fixBengaliOrder(s){
+  if(!s || !/[ঀ-৿]/.test(s)) return s;
+  try{ s=s.normalize("NFC"); }catch(e){}
+  const cons="[\\u0995-\\u09B9\\u09CE\\u09DC-\\u09DF]";
+  const re=new RegExp("([\\u09BF\\u09C7\\u09C8\\u09CB\\u09CC])((?:"+cons+"\\u09CD)*"+cons+")","g");
+  return s.replace(re,"$2$1");
+}
 async function openLiquid(){
   if(!state.pdfDoc){ toast("আগে একটা PDF খুলুন",""); return; }
   toast("লেখা প্রবাহিত করা হচ্ছে…");
@@ -1192,17 +1202,20 @@ async function openLiquid(){
   for(const orig of state.pageOrder){
     pageNo++;
     let items=[];
-    try{
-      const tc = state.textCache[orig] || (state.textCache[orig]=await (await state.pdfDoc.getPage(orig)).getTextContent());
-      items = (tc.items||[]).map(it=>{ const t=it.transform; const fh=Math.hypot(t[2],t[3])||10; return {str:sanitizeGlyphs(it.str), x:t[4], y:t[5], h:fh, w:it.width||0}; }).filter(i=>i.str&&i.str.trim());
-    }catch(e){}
-    if(!items.length && state.ocrCache[orig] && state.ocrCache[orig].length){
+    // Prefer OCR when it exists — it yields clean logical-order Bengali,
+    // whereas the embedded text layer can be visual-order or broken-ToUnicode.
+    if(state.ocrCache[orig] && state.ocrCache[orig].length){
       items = state.ocrCache[orig].map(it=>({str:sanitizeGlyphs(it.str), x:it.x, y:it.yTop-it.h*0.8, h:it.h, w:it.w||0, sp:true}));
+    } else {
+      try{
+        const tc = state.textCache[orig] || (state.textCache[orig]=await (await state.pdfDoc.getPage(orig)).getTextContent());
+        items = (tc.items||[]).map(it=>{ const t=it.transform; const fh=Math.hypot(t[2],t[3])||10; return {str:sanitizeGlyphs(it.str), x:t[4], y:t[5], h:fh, w:it.width||0}; }).filter(i=>i.str&&i.str.trim());
+      }catch(e){}
     }
     const paras=draftParagraphs(draftLines(items));
     if(!paras.length){ noText++; parts.push('<p class="liq-empty">[পাতা '+pageNo+': কোনো লেখা নেই — স্ক্যান পাতা হলে ⋯ মেনু → Recognize text (OCR) চালিয়ে আবার Liquid খুলুন]</p>'); continue; }
     const sizes=paras.map(p=>p.size).slice().sort((a,b)=>a-b); const bodySz=sizes[Math.floor(sizes.length/2)]||10;
-    for(const p of paras){ const t=escLiq(p.text); parts.push((p.head||p.size>=bodySz*1.35) ? "<h2>"+t+"</h2>" : "<p>"+t+"</p>"); }
+    for(const p of paras){ const t=escLiq(fixBengaliOrder(p.text)); parts.push((p.head||p.size>=bodySz*1.35) ? "<h2>"+t+"</h2>" : "<p>"+t+"</p>"); }
     await new Promise(r=>setTimeout(r,0));   // yield so a big PDF doesn't freeze the UI
   }
   $("liqContent").innerHTML = parts.join("") || '<p class="liq-empty">কোনো লেখা পাওয়া যায়নি।</p>';
