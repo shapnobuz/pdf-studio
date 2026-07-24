@@ -1295,8 +1295,13 @@ function bjReArrange(str){
   }
   return str;
 }
-function bijoyToUnicode(src){
+// Bijoy-family fonts differ on a few ambiguous glyph codes (e.g. ø = স্ন in
+// standard SutonnyMJ but ্ল in some variants). `remap` retargets such source
+// bytes before decoding; the right variant is chosen per-document by dict score.
+const BIJOY_VARIANTS=[null, [["ø","¬"]]];
+function bijoyToUnicode(src, remap){
   if(!src) return src;
+  if(remap) for(const kv of remap) src=src.split(kv[0]).join(kv[1]);
   src=bjMap(src, BJ_PRE);
   src=bjMap(src, BJ_MAP);
   src=bjFixReph(src);
@@ -1304,6 +1309,10 @@ function bijoyToUnicode(src){
   src=bjMap(src, BJ_POST);
   try{ src=src.normalize("NFC"); }catch(e){}
   return src;
+}
+function bijoyScore(converted){
+  const w=converted.match(/[ঀ-৿]+/g)||[]; if(w.length<8||!BN_WORDS) return 0;
+  let k=0; for(const x of w) if(BN_WORDS.has(x)) k++; return k/w.length;
 }
 /* Detect a legacy ASCII-Bengali (Bijoy/SutonnyMJ) text layer: lots of Latin,
    almost no Unicode Bengali. Validated by converting and checking dict hits. */
@@ -1392,8 +1401,11 @@ function bnCorrectWord(w, broken){
     else if(i+1<chars.length && isC(chars[i]) && isC(chars[i+1]))                                  // insert a missing hasant between consonants
       take(chars.slice(0,i+1).join("")+"্"+chars.slice(i+1).join(""));
   }
+  // 3) whole-conjunct confusions (legacy-font variants & OCR): dict-gated swaps.
+  for(const cf of BN_CONJ_CONF){ if(core.includes(cf[0])) take(core.split(cf[0]).join(cf[1])); if(core.includes(cf[1])) take(core.split(cf[1]).join(cf[0])); }
   return best ? (pre+best+post) : (pre+core+post);
 }
+const BN_CONJ_CONF=[["স্ন","্ল"],["ঞ্জ","জ্ঞ"],["ক্স","ক্ষ"],["ষ্ণ","ষ্ন"]];
 /* Fix spurious spaces: a combining mark can never start a word, so glue it back;
    also merge an adjacent split when the join is a real word and at least one
    half is not (so two legitimately separate words are never fused). */
@@ -1488,14 +1500,19 @@ async function openLiquid(){
     paras.forEach((p,pi)=> blocks.push({text:p.text, head:(p.head||p.size>=bodySz*1.35), page:pageNo, edge:(pi===0||pi===paras.length-1)}));
     await new Promise(r=>setTimeout(r,0));   // yield so a big PDF doesn't freeze the UI
   }
-  // Phase 1.4: is the native text layer legacy Bijoy/ASCII-Bengali? (validated)
-  let bijoy=false;
-  if(hasNative && !usedOcr && looksBijoy(rawConcat) && bijoyValid(bijoyToUnicode(rawConcat.slice(0,4000)))) bijoy=true;
+  // Phase 1.4: legacy Bijoy/ASCII-Bengali? Pick the font variant whose decoding
+  // yields the most real dictionary words (handles SutonnyMJ vs its variants).
+  let bijoy=false, bjVariant=null;
+  if(hasNative && !usedOcr && looksBijoy(rawConcat)){
+    const sample=rawConcat.slice(0,4000); let bestScore=0;
+    for(const v of BIJOY_VARIANTS){ const s=bijoyScore(bijoyToUnicode(sample, v)); if(s>bestScore){ bestScore=s; bjVariant=v; } }
+    if(bestScore>0.4) bijoy=true;
+  }
   // Phase 1.5: layout cleanup — drop page numbers and running headers/footers
   const cleaned = stripRunningMatter(blocks, pageNo);
   // Phase 2: normalize each paragraph (Bijoy→Unicode, else glyph-fold), detect a
   // broken native layer, then render (repairing if needed).
-  for(const b of cleaned){ if(!b.empty) b.text = bijoy ? bijoyToUnicode(b.text) : sanitizeGlyphs(b.text); }
+  for(const b of cleaned){ if(!b.empty) b.text = bijoy ? bijoyToUnicode(b.text, bjVariant) : sanitizeGlyphs(b.text); }
   const rawAll=cleaned.map(b=>b.text||"").join(" ");
   const broken = !bijoy && hasNative && !usedOcr && bengaliBroken(rawAll);
   const parts=[];
