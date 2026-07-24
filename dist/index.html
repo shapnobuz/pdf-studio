@@ -2121,9 +2121,16 @@ function loadTesseract(){
 async function getOcrWorker(){
   if(ocrWorker) return ocrWorker;
   await loadTesseract();
-  ocrWorker = await Tesseract.createWorker(["eng","ben"], 1, {
-    logger: m => { if(m.status==="recognizing text" && typeof m.progress==="number"){ setOcrBtn("Reading… "+Math.round(m.progress*100)+"%"); if(ocrPageProgCb) ocrPageProgCb(m.progress); } }
-  });
+  const logger = m => { if(m.status==="recognizing text" && typeof m.progress==="number"){ setOcrBtn("Reading… "+Math.round(m.progress*100)+"%"); if(ocrPageProgCb) ocrPageProgCb(m.progress); } };
+  // Prefer the high-accuracy LSTM ("best") Bengali/English models — a big
+  // quality jump on Bengali conjuncts & matras. Same CDN host as the default,
+  // so no bundled size; falls back to the standard model if it can't load.
+  try{
+    ocrWorker = await Tesseract.createWorker(["eng","ben"], 1, { langPath:"https://tessdata.projectnaptha.com/4.0.0_best", logger });
+  }catch(e){
+    ocrWorker = await Tesseract.createWorker(["eng","ben"], 1, { logger });
+  }
+  try{ await ocrWorker.setParameters({ preserve_interword_spaces:"1", user_defined_dpi:"300" }); }catch(e){}
   return ocrWorker;
 }
 function extractWords(data){
@@ -2135,7 +2142,12 @@ function extractWords(data){
 }
 async function ocrPage(orig){
   const page=await state.pdfDoc.getPage(orig);
-  const sc=2.0;
+  // Render at higher resolution so Bengali matras/conjuncts are crisp for OCR.
+  // Target ~2600px tall (≈300dpi for a book page), clamped, and capped by total
+  // pixels so a huge page doesn't blow up memory on mobile.
+  const base=page.getViewport({scale:1, rotation:rotationOf(orig)});
+  let sc=Math.min(3.5, Math.max(2.0, 2600/(base.height||1)));
+  const MAXPIX=7000000; if(base.width*base.height*sc*sc>MAXPIX) sc=Math.sqrt(MAXPIX/(base.width*base.height));
   const vp=page.getViewport({scale:sc, rotation:rotationOf(orig)});
   const c=document.createElement("canvas"); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height);
   const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
