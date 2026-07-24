@@ -1242,6 +1242,85 @@ function bengaliBroken(text){
   return dash>=5;
 }
 
+/* ===== Legacy Bijoy/SutonnyMJ (ASCII-Bengali) -> Unicode ===== */
+const BJ_PRE=[[" +", " "], ["yy", "y"], ["vv", "v"], ["­­", "­"], ["y&", "y"], ["„&", "„"], ["‡u", "u‡"], ["wu", "uw"], [" ,", ","], [" \\|", "\\|"], ["\\\\ ", ""], [" \\\\", ""], ["\\\\", ""], ["\n +", "\n"], [" +\n", "\n"], ["\n\n\n\n\n", "\n\n"], ["\n\n\n\n", "\n\n"], ["\n\n\n", "\n\n"]];
+const BJ_MAP=[["Av", "আ"], ["A", "অ"], ["B", "ই"], ["C", "ঈ"], ["D", "উ"], ["E", "ঊ"], ["F", "ঋ"], ["G", "এ"], ["H", "ঐ"], ["I", "ও"], ["J", "ঔ"], ["K", "ক"], ["L", "খ"], ["M", "গ"], ["N", "ঘ"], ["O", "ঙ"], ["P", "চ"], ["Q", "ছ"], ["R", "জ"], ["S", "ঝ"], ["T", "ঞ"], ["U", "ট"], ["V", "ঠ"], ["W", "ড"], ["X", "ঢ"], ["Y", "ণ"], ["Z", "ত"], ["_", "থ"], ["`", "দ"], ["a", "ধ"], ["b", "ন"], ["c", "প"], ["d", "ফ"], ["e", "ব"], ["f", "ভ"], ["g", "ম"], ["h", "য"], ["i", "র"], ["j", "ল"], ["k", "শ"], ["l", "ষ"], ["m", "স"], ["n", "হ"], ["o", "ড়"], ["p", "ঢ়"], ["q", "য়"], ["r", "ৎ"], ["s", "ং"], ["t", "ঃ"], ["u", "ঁ"], ["0", "০"], ["1", "১"], ["2", "২"], ["3", "৩"], ["4", "৪"], ["5", "৫"], ["6", "৬"], ["7", "৭"], ["8", "৮"], ["9", "৯"], ["•", "ঙ্"], ["v", "া"], ["w", "ি"], ["x", "ী"], ["y", "ু"], ["z", "ু"], ["“", "ু"], ["–", "ু"], ["~", "ূ"], ["ƒ", "ূ"], ["‚", "ূ"], ["„„", "ৃ"], ["„", "ৃ"], ["…", "ৃ"], ["†", "ে"], ["‡", "ে"], ["ˆ", "ৈ"], ["‰", "ৈ"], ["Š", "ৗ"], ["\\|", "।"], ["\\&", "্‌"], ["\\^", "্ব"], ["‘", "্তু"], ["’", "্থ"], ["‹", "্ক"], ["Œ", "্ক্র"], ["”", "চ্"], ["—", "্ত"], ["˜", "দ্"], ["™", "দ্"], ["š", "ন্"], ["›", "ন্"], ["œ", "্ন"], ["Ÿ", "্ব"], ["¡", "্ব"], ["¢", "্ভ"], ["£", "্ভ্র"], ["¤", "ম্"], ["¥", "্ম"], ["¦", "্ব"], ["§", "্ম"], ["¨", "্য"], ["©", "র্"], ["ª", "্র"], ["«", "্র"], ["¬", "্ল"], ["­", "্ল"], ["®", "ষ্"], ["¯", "স্"], ["°", "ক্ক"], ["±", "ক্ট"], ["²", "ক্ষ্ণ"], ["³", "ক্ত"], ["´", "ক্ম"], ["µ", "ক্র"], ["¶", "ক্ষ"], ["·", "ক্স"], ["¸", "গু"], ["¹", "জ্ঞ"], ["º", "গ্দ"], ["»", "গ্ধ"], ["¼", "ঙ্ক"], ["½", "ঙ্গ"], ["¾", "জ্জ"], ["¿", "্ত্র"], ["À", "জ্ঝ"], ["Á", "জ্ঞ"], ["Â", "ঞ্চ"], ["Ã", "ঞ্ছ"], ["Ä", "ঞ্জ"], ["Å", "ঞ্ঝ"], ["Æ", "ট্ট"], ["Ç", "ড্ড"], ["È", "ণ্ট"], ["É", "ণ্ঠ"], ["Ê", "ণ্ড"], ["Ë", "ত্ত"], ["Ì", "ত্থ"], ["Í", "ত্ম"], ["Î", "ত্র"], ["Ï", "দ্দ"], ["Ð", "-"], ["Ñ", "-"], ["Ò", "\""], ["Ó", "\""], ["Ô", "'"], ["Õ", "'"], ["Ö", "্র"], ["×", "দ্ধ"], ["Ø", "দ্ব"], ["Ù", "দ্ম"], ["Ú", "ন্ঠ"], ["Û", "ন্ড"], ["Ü", "ন্ধ"], ["Ý", "ন্স"], ["Þ", "প্ট"], ["ß", "প্ত"], ["à", "প্প"], ["á", "প্স"], ["â", "ব্জ"], ["ã", "ব্দ"], ["ä", "ব্ধ"], ["å", "ভ্র"], ["æ", "ম্ন"], ["ç", "ম্ফ"], ["è", "্ন"], ["é", "ল্ক"], ["ê", "ল্গ"], ["ë", "ল্ট"], ["ì", "ল্ড"], ["í", "ল্প"], ["î", "ল্ফ"], ["ï", "শু"], ["ð", "শ্চ"], ["ñ", "শ্ছ"], ["ò", "ষ্ণ"], ["ó", "ষ্ট"], ["ô", "ষ্ঠ"], ["õ", "ষ্ফ"], ["ö", "স্খ"], ["÷", "স্ট"], ["ø", "স্ন"], ["ù", "স্ফ"], ["ú", "্প"], ["û", "হু"], ["ü", "হৃ"], ["ý", "হ্ন"], ["þ", "হ্ম"]];
+const BJ_PRO=[["্্", "্"]];
+const BJ_POST=[["০ঃ", "০:"], ["১ঃ", "১:"], ["২ঃ", "২:"], ["৩ঃ", "৩:"], ["৪ঃ", "৪:"], ["৫ঃ", "৫:"], ["৬ঃ", "৬:"], ["৭ঃ", "৭:"], ["৮ঃ", "৮:"], ["৯ঃ", "৯:"], [" ঃ", ":"], ["\nঃ", "\n:"], ["]ঃ", "]:"], ["\\[ঃ", "\\[:"], ["  ", " "], ["অা", "আ"], ["্‌্‌", "্‌"]];
+const BJ_CONS=new Set("কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ".split(""));
+const BJ_POSTKAR=new Set("াোৌৗুূীৃ".split(""));
+const BJ_KAR=new Set("ািীুূৃেৈোৌৗ".split(""));
+function bjIsHalant(c){return c==="্";}
+function bjIsCons(c){return BJ_CONS.has(c);}
+function bjIsKar(c){return BJ_KAR.has(c);}
+function bjIsPreKar(c){return c==="ি"||c==="ৈ"||c==="ে";}
+function bjIsPostKar(c){return BJ_POSTKAR.has(c);}
+function bjIsNukta(c){return c==="ঁ";}
+function bjIsSpace(c){return c===" "||c==="\t"||c==="\n"||c==="\r";}
+function bjMap(text, pairs){ for(const kv of pairs) text=text.replace(new RegExp(kv[0],"g"), kv[1]); return text; }
+function ch(s,i){ return (i>=0&&i<s.length)?s[i]:""; }
+
+// Move reph "র্" (left by the map as "Cর্") to before its akshara: "র্C".
+function bjFixReph(s){
+  for(let i=s.length-2;i>=1;i--){
+    if(s[i]==="র" && s[i+1]==="্" && bjIsCons(s[i-1]) && s[i-1]!=="র"){
+      let start=i-1;
+      while(start-2>=0 && s[start-1]==="্" && bjIsCons(s[start-2])) start-=2;
+      if(start<i){ s=s.slice(0,start)+"র্"+s.slice(start,i)+s.slice(i+2); i=start; }
+    }
+  }
+  return s;
+}
+function bjReArrange(str){
+  str=bjMap(str, BJ_PRO);
+  let i=0;
+  while(i<str.length){
+    if(i>0 && ch(str,i)==="্" && (bjIsKar(ch(str,i-1))||bjIsNukta(ch(str,i-1))) && i<str.length-1){
+      str=str.slice(0,i-1)+ch(str,i)+ch(str,i+1)+ch(str,i-1)+str.slice(i+2);
+    }
+    if(i<str.length-1 && bjIsPreKar(ch(str,i)) && !bjIsSpace(ch(str,i+1))){
+      let temp=str.slice(0,i), j=1;
+      while((i+j)<str.length-1 && bjIsCons(ch(str,i+j))){ if((i+j)<str.length && bjIsHalant(ch(str,i+j+1))) j+=2; else break; }
+      temp+=str.slice(i+1,i+j+1);
+      let l=0;
+      if(ch(str,i)==="ে"&&ch(str,i+j+1)==="া"){ temp+="ো"; l=1; }
+      else if(ch(str,i)==="ে"&&ch(str,i+j+1)==="ৗ"){ temp+="ৌ"; l=1; }
+      else temp+=ch(str,i);
+      temp+=str.slice(i+j+l+1); str=temp; i+=j;
+    }
+    if(i<str.length-1 && bjIsNukta(ch(str,i)) && bjIsPostKar(ch(str,i+1))){
+      str=str.slice(0,i)+ch(str,i+1)+ch(str,i)+str.slice(i+2);
+    }
+    i++;
+  }
+  return str;
+}
+function bijoyToUnicode(src){
+  if(!src) return src;
+  src=bjMap(src, BJ_PRE);
+  src=bjMap(src, BJ_MAP);
+  src=bjFixReph(src);
+  src=bjReArrange(src);
+  src=bjMap(src, BJ_POST);
+  try{ src=src.normalize("NFC"); }catch(e){}
+  return src;
+}
+/* Detect a legacy ASCII-Bengali (Bijoy/SutonnyMJ) text layer: lots of Latin,
+   almost no Unicode Bengali. Validated by converting and checking dict hits. */
+function looksBijoy(text){
+  if(!text) return false;
+  const bn=(text.match(/[ঀ-৿]/g)||[]).length;
+  const latin=(text.match(/[A-Za-z]/g)||[]).length;
+  return latin>=40 && bn<=latin*0.3;
+}
+function bijoyValid(converted){
+  const words=(converted.match(/[ঀ-৿]+/g)||[]);
+  if(words.length<8 || !BN_WORDS) return false;
+  let known=0; for(const w of words) if(BN_WORDS.has(w)) known++;
+  return known/words.length > 0.4;
+}
+
+
 /* ---- Bengali dictionary: post-OCR & reconstruction spell-correction, validated
    against a ~34k common-word list (gzip-embedded). Only UNKNOWN words are ever
    touched, and only via known OCR/font confusions that land on a real word, so
@@ -1366,8 +1445,9 @@ async function openLiquid(){
   if(!state.pdfDoc){ toast("আগে একটা PDF খুলুন",""); return; }
   toast("লেখা প্রবাহিত করা হচ্ছে…");
   await loadBnDict();   // Bengali spell-correction dictionary (no-op if already loaded)
-  // Phase 1: collect raw paragraphs (so we can judge the whole doc before rendering)
-  const blocks=[]; let noText=0, pageNo=0, usedOcr=false, hasNative=false;
+  // Phase 1: collect paragraphs with RAW text (so a legacy-encoding decision can
+  // be made over the whole doc before any lossy glyph folding happens).
+  const blocks=[]; let noText=0, pageNo=0, usedOcr=false, hasNative=false, rawConcat="";
   for(const orig of state.pageOrder){
     pageNo++;
     let items=[];
@@ -1375,12 +1455,12 @@ async function openLiquid(){
     // whereas the embedded text layer can be visual-order or broken-ToUnicode.
     if(state.ocrCache[orig] && state.ocrCache[orig].length){
       usedOcr=true;
-      items = state.ocrCache[orig].map(it=>({str:sanitizeGlyphs(it.str), x:it.x, y:it.yTop-it.h*0.8, h:it.h, w:it.w||0, sp:true}));
+      items = state.ocrCache[orig].map(it=>({str:it.str, x:it.x, y:it.yTop-it.h*0.8, h:it.h, w:it.w||0, sp:true}));
     } else {
       try{
         const tc = state.textCache[orig] || (state.textCache[orig]=await (await state.pdfDoc.getPage(orig)).getTextContent());
-        items = (tc.items||[]).map(it=>{ const t=it.transform; const fh=Math.hypot(t[2],t[3])||10; return {str:sanitizeGlyphs(it.str), x:t[4], y:t[5], h:fh, w:it.width||0}; }).filter(i=>i.str&&i.str.trim());
-        if(items.length) hasNative=true;
+        items = (tc.items||[]).map(it=>{ const t=it.transform; const fh=Math.hypot(t[2],t[3])||10; return {str:it.str, x:t[4], y:t[5], h:fh, w:it.width||0}; }).filter(i=>i.str&&i.str.trim());
+        if(items.length){ hasNative=true; if(rawConcat.length<6000) rawConcat+=items.map(i=>i.str).join(" ")+" "; }
       }catch(e){}
     }
     const paras=draftParagraphs(draftLines(items));
@@ -1389,17 +1469,23 @@ async function openLiquid(){
     paras.forEach((p,pi)=> blocks.push({text:p.text, head:(p.head||p.size>=bodySz*1.35), page:pageNo, edge:(pi===0||pi===paras.length-1)}));
     await new Promise(r=>setTimeout(r,0));   // yield so a big PDF doesn't freeze the UI
   }
+  // Phase 1.4: is the native text layer legacy Bijoy/ASCII-Bengali? (validated)
+  let bijoy=false;
+  if(hasNative && !usedOcr && looksBijoy(rawConcat) && bijoyValid(bijoyToUnicode(rawConcat.slice(0,4000)))) bijoy=true;
   // Phase 1.5: layout cleanup — drop page numbers and running headers/footers
   const cleaned = stripRunningMatter(blocks, pageNo);
-  // Phase 2: detect a broken native text layer, then render (repairing if needed)
+  // Phase 2: normalize each paragraph (Bijoy→Unicode, else glyph-fold), detect a
+  // broken native layer, then render (repairing if needed).
+  for(const b of cleaned){ if(!b.empty) b.text = bijoy ? bijoyToUnicode(b.text) : sanitizeGlyphs(b.text); }
   const rawAll=cleaned.map(b=>b.text||"").join(" ");
-  const broken = hasNative && !usedOcr && bengaliBroken(rawAll);
+  const broken = !bijoy && hasNative && !usedOcr && bengaliBroken(rawAll);
   const parts=[];
   for(const b of cleaned){
     if(b.empty){ parts.push('<p class="liq-empty">[পাতা '+b.empty+': কোনো লেখা নেই — স্ক্যান পাতা হলে ⋯ মেনু → Recognize text (OCR) চালিয়ে আবার Liquid খুলুন]</p>'); continue; }
     const t=escLiq(bnRepair(fixHyphenation(b.text), broken));
     parts.push(b.head ? "<h2>"+t+"</h2>" : "<p>"+t+"</p>");
   }
+  if(bijoy) toast("লিগ্যাসি (Bijoy) ফন্ট শনাক্ত — Unicode-এ রূপান্তরিত","",5000);
   const banner = broken ? '<div class="liq-fix" id="liqFixBar"><div><b>এই বইয়ের এমবেডেড লেখা ত্রুটিপূর্ণ</b><span>ে-কার ঠিকমতো আসছে না। আংশিক মেরামত করা হয়েছে; পুরোপুরি পরিষ্কার পড়তে OCR চালান (একবারই, পরে দ্রুত)।</span></div><button id="liqOcrFix">OCR চালিয়ে পরিষ্কার করুন</button></div>' : "";
   $("liqContent").innerHTML = banner + (parts.join("") || '<p class="liq-empty">কোনো লেখা পাওয়া যায়নি।</p>');
   const fb=$("liqOcrFix"); if(fb) fb.onclick=async()=>{ await ocrAllPages(); if(!ocrCancel) openLiquid(); };
