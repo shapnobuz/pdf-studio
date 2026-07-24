@@ -120,6 +120,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
   .topbar::-webkit-scrollbar{display:none}
   .topbar > *{flex:0 0 auto}
+  /* Library view: only document-independent controls matter (Open + theme). Hide the rest. */
+  body.mode-lib #toggleSidebar, body.mode-lib #libBtn, body.mode-lib #readModeBtn,
+  body.mode-lib #liquidBtn, body.mode-lib #undoBtn, body.mode-lib #redoBtn,
+  body.mode-lib .zoom, body.mode-lib #searchWrap, body.mode-lib #exportBtn,
+  body.mode-lib #moreBtn, body.mode-lib .topbar .divider{display:none !important}
   .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em;padding-right:8px;white-space:nowrap}
   .brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#7c74ff);
     display:grid;place-items:center;color:#fff;box-shadow:0 2px 6px rgba(79,70,229,.4)}
