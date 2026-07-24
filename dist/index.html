@@ -340,6 +340,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .library{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--workspace);overflow:hidden;}
   .library.hidden{display:none;}
   body.mode-lib .toolsbar, body.mode-lib .zoom, body.mode-lib .search, body.mode-lib .sidebar{display:none;}
+  body.mode-liquid .toolsbar, body.mode-liquid .zoom, body.mode-liquid .search, body.mode-liquid .sidebar{display:none;}
+  /* Liquid button: only meaningful for PDFs — hide while reading EPUB, in library, or already liquid */
+  body.mode-epub #liquidBtn, body.mode-lib #liquidBtn, body.mode-liquid #liquidBtn{display:none;}
+  .liq-badge{flex:none;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-weak);border-radius:6px;padding:3px 7px;}
+  .epub-content .liq-empty{color:var(--muted);font-style:italic;font-size:.9em;}
   .lib-head{flex:0 0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 24px 8px;}
   .lib-h{margin:0;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
   .lib-goal{margin-left:auto;display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 12px;}
@@ -498,6 +503,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <button class="btn ghost-bordered" id="openBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Open</button>
   <button class="btn ghost-bordered" id="libBtn" title="আমার লাইব্রেরি"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
   <button class="icon-btn" id="readModeBtn" title="Book Reading Mode — শুধু পড়া (Edit টুল লুকান)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></button>
+  <button class="btn ghost-bordered" id="liquidBtn" title="Liquid mode — PDF-এর লেখা বই-এর মতো প্রবাহিত"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7S6 9 6 14a6 6 0 0 0 12 0c0-5-6-11.3-6-11.3z"/></svg>Liquid</button>
   <div class="divider"></div>
   <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5H9"/></svg></button>
   <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0-5 5v0a5 5 0 0 0 5 5h6"/></svg></button>
@@ -624,6 +630,21 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       </div>
       <div class="lib-filters" id="libFilters"></div>
       <div class="lib-grid" id="libGrid"></div>
+    </div>
+    <div class="epub hidden" id="liquidReader">
+      <div class="epub-bar">
+        <button class="epub-nav" id="liqClose" title="ফিরে যান (পাতা ভিউ)" aria-label="Back to pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="epub-title" id="liqTitle"></div>
+        <div class="epub-ctrls">
+          <button id="liqFontMinus" title="ছোট লেখা">A−</button>
+          <button id="liqFontPlus" title="বড় লেখা">A+</button>
+          <button id="liqWidth" title="পড়ার প্রস্থ" aria-label="Width"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/><line x1="3" y1="12" x2="21" y2="12"/></svg></button>
+          <button id="liqTheme" title="সেপিয়া থিম" aria-label="Sepia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
+        <span class="liq-badge">Liquid</span>
+      </div>
+      <div class="epub-scroll" id="liqScroll"><article class="epub-content" id="liqContent"></article></div>
+      <div class="epub-foot"><div class="epub-prog" id="liqProg"><i></i></div><span class="epub-pct" id="liqPct"></span></div>
     </div>
   </main>
 </div>
@@ -1097,7 +1118,7 @@ function showDict(term){
 }
 
 function enterEpubReader(){
-  hideLibrary();
+  hideLibrary(); closeLiquid();
   document.body.classList.add("mode-epub");
   emptyEl.style.display="none"; pagesEl.style.display="none";
   const r=$("epubReader"); if(r) r.classList.remove("hidden");
@@ -1157,6 +1178,66 @@ function toggleImmersive(on){ document.body.classList.toggle("epub-immersive", o
   }
 })();
 
+/* ============================================================
+   LIQUID MODE — reflow a PDF's text into a flowing, book-like reader.
+   Reuses draftLines/draftParagraphs (the Word-draft geometry reconstruction)
+   and the EPUB reader's typography/theme CSS. Toggle only; the fixed-page
+   render is untouched. Best on text-heavy PDFs; scanned pages need OCR first.
+   ============================================================ */
+function escLiq(s){ return docxEscape(s); }
+async function openLiquid(){
+  if(!state.pdfDoc){ toast("আগে একটা PDF খুলুন",""); return; }
+  toast("লেখা প্রবাহিত করা হচ্ছে…");
+  const parts=[]; let noText=0, pageNo=0;
+  for(const orig of state.pageOrder){
+    pageNo++;
+    let items=[];
+    try{
+      const tc = state.textCache[orig] || (state.textCache[orig]=await (await state.pdfDoc.getPage(orig)).getTextContent());
+      items = (tc.items||[]).map(it=>{ const t=it.transform; const fh=Math.hypot(t[2],t[3])||10; return {str:sanitizeGlyphs(it.str), x:t[4], y:t[5], h:fh, w:it.width||0}; }).filter(i=>i.str&&i.str.trim());
+    }catch(e){}
+    if(!items.length && state.ocrCache[orig] && state.ocrCache[orig].length){
+      items = state.ocrCache[orig].map(it=>({str:sanitizeGlyphs(it.str), x:it.x, y:it.yTop-it.h*0.8, h:it.h, w:it.w||0, sp:true}));
+    }
+    const paras=draftParagraphs(draftLines(items));
+    if(!paras.length){ noText++; parts.push('<p class="liq-empty">[পাতা '+pageNo+': কোনো লেখা নেই — স্ক্যান পাতা হলে ⋯ মেনু → Recognize text (OCR) চালিয়ে আবার Liquid খুলুন]</p>'); continue; }
+    const sizes=paras.map(p=>p.size).slice().sort((a,b)=>a-b); const bodySz=sizes[Math.floor(sizes.length/2)]||10;
+    for(const p of paras){ const t=escLiq(p.text); parts.push((p.head||p.size>=bodySz*1.35) ? "<h2>"+t+"</h2>" : "<p>"+t+"</p>"); }
+    await new Promise(r=>setTimeout(r,0));   // yield so a big PDF doesn't freeze the UI
+  }
+  $("liqContent").innerHTML = parts.join("") || '<p class="liq-empty">কোনো লেখা পাওয়া যায়নি।</p>';
+  $("liqTitle").textContent = (state.fileName||"Document").replace(/\.pdf$/i,"");
+  applyLiquidPref(); showLiquid();
+  const sc=$("liqScroll"); if(sc) sc.scrollTop=0; updateLiquidProgress();
+  if(noText) toast(noText+" পাতায় লেখা পাওয়া যায়নি (স্ক্যান হলে OCR চালান)","",6000);
+}
+function showLiquid(){ document.body.classList.add("mode-liquid"); emptyEl.style.display="none"; pagesEl.style.display="none"; const r=$("liquidReader"); if(r) r.classList.remove("hidden"); }
+function closeLiquid(){ document.body.classList.remove("mode-liquid"); const r=$("liquidReader"); if(r) r.classList.add("hidden"); }
+function applyLiquidPref(){
+  const p=epubPref(), c=$("liqContent"), r=$("liquidReader"); if(!c||!r) return;
+  c.style.setProperty("--er-fs",(p.fs||19)+"px");
+  c.style.setProperty("--er-lh",(p.lh||1.75));
+  c.style.setProperty("--er-w", p.w==="wide"?"46rem":(p.w==="full"?"100%":"34rem"));
+  r.classList.toggle("er-sepia", p.theme==="sepia");
+}
+function updateLiquidProgress(){
+  const sc=$("liqScroll"); if(!sc) return;
+  const pct = sc.scrollHeight>sc.clientHeight ? Math.round(sc.scrollTop/(sc.scrollHeight-sc.clientHeight)*100) : 0;
+  const p=Math.max(0,Math.min(100,pct));
+  const prog=$("liqProg"); if(prog&&prog.firstElementChild) prog.firstElementChild.style.width=p+"%";
+  const pe=$("liqPct"); if(pe) pe.textContent=p+"%";
+}
+(function wireLiquid(){
+  const lb=$("liquidBtn"); if(lb) lb.onclick=openLiquid;
+  const cl=$("liqClose"); if(cl) cl.onclick=()=>{ closeLiquid(); if(state.pdfDoc) pagesEl.style.display=""; };
+  const fp=$("liqFontPlus"), fm=$("liqFontMinus"), wb=$("liqWidth"), tb=$("liqTheme"), sc=$("liqScroll");
+  if(fp) fp.onclick=()=>{ epubSetPref({fs:Math.min(30,(epubPref().fs||19)+1)}); applyLiquidPref(); };
+  if(fm) fm.onclick=()=>{ epubSetPref({fs:Math.max(13,(epubPref().fs||19)-1)}); applyLiquidPref(); };
+  if(wb) wb.onclick=()=>{ const cur=epubPref().w||"narrow"; epubSetPref({w: cur==="narrow"?"wide":(cur==="wide"?"full":"narrow")}); applyLiquidPref(); };
+  if(tb) tb.onclick=()=>{ epubSetPref({theme: epubPref().theme==="sepia"?"":"sepia"}); applyLiquidPref(); };
+  if(sc) sc.addEventListener("scroll", updateLiquidProgress);
+})();
+
 async function openPdfDoc(bytes){
   // Encrypted PDFs: pdf.js raises PasswordException (code 1 = password needed, code 2 = wrong password).
   // Loop so the user can retry; semantics verified against qpdf AES-256 fixtures in node.
@@ -1177,7 +1258,7 @@ async function openPdfDoc(bytes){
 
 async function loadBytes(bytes, reset, name){
   if(name){ state.fileName=name; }
-  exitEpubReader(); hideLibrary();   // opening a PDF leaves EPUB / library views
+  exitEpubReader(); hideLibrary(); closeLiquid();   // opening a PDF leaves EPUB / library / liquid views
   state.baseBytes = bytes.slice(0);
   const doc = await openPdfDoc(bytes);
   state.pdfDoc = doc; state.numPages = doc.numPages;
@@ -2591,6 +2672,7 @@ let libFilter="all";
 function shelfLabel(s){ return s==="finished"?"পড়েছি":(s==="toread"?"পড়ব":"পড়ছি"); }
 async function showLibrary(){
   const lib=$("library"); if(!lib) return;
+  closeLiquid();
   document.body.classList.add("mode-lib");
   emptyEl.style.display="none"; if($("epubReader")) $("epubReader").classList.add("hidden"); pagesEl.style.display="none";
   lib.classList.remove("hidden"); await renderLibrary();
