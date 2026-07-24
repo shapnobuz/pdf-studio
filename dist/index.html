@@ -210,7 +210,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .thumb:hover .grip{opacity:1}
   .thumb .grip svg{width:12px;height:12px}
 
-  .workspace{flex:1 1 auto;background:var(--workspace);overflow:auto;position:relative;min-width:0}
+  .workspace{flex:1 1 auto;background:var(--workspace);overflow:auto;position:relative;min-width:0;touch-action:pan-x pan-y}
+  .epub-scroll{touch-action:pan-x pan-y}
   .pages{display:flex;flex-direction:column;align-items:center;gap:16px;padding:22px 22px 60px}
   .page{position:relative;background:#fff;box-shadow:var(--shadow);border-radius:2px;flex:0 0 auto}
   .page .pcanvas{display:block;border-radius:2px}
@@ -3739,6 +3740,56 @@ function applyReadMode(on){ document.body.classList.toggle("reading-mode", !!on)
 (function initSearchToggle(){
   const t=$("searchToggle"), inp=$("searchInput"); if(!t) return;
   t.onclick=()=>{ const open=document.body.classList.toggle("search-open"); if(open && inp){ inp.focus(); inp.select&&inp.select(); } };
+})();
+/* Two-finger pinch zoom: PDF pages scale live (crisp re-render on release);
+   Liquid/EPUB reading views pinch the font size instead. */
+(function initPinchZoom(){
+  const ws=$("workspace"); if(!ws) return;
+  let mode=null, startDist=0, startVal=0, ratio=1;
+  const gap=(a,b)=>Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+  function surface(){
+    if(document.body.classList.contains("mode-liquid")) return "liquid";
+    if(document.body.classList.contains("mode-epub")) return "epub";
+    if(state.pdfDoc && !document.body.classList.contains("mode-lib")) return "page";
+    return null;
+  }
+  function onStart(e){
+    if(mode || e.touches.length!==2) return;
+    const s=surface(); if(!s) return;
+    mode=s; startDist=gap(e.touches[0],e.touches[1]); ratio=1;
+    if(s==="page"){ startVal=state.scale;
+      const r=pagesEl.getBoundingClientRect();
+      const ox=(e.touches[0].clientX+e.touches[1].clientX)/2 - r.left;
+      const oy=(e.touches[0].clientY+e.touches[1].clientY)/2 - r.top;
+      pagesEl.style.transformOrigin=ox+"px "+oy+"px"; pagesEl.style.willChange="transform";
+    } else { startVal=epubPref().fs||19; }
+  }
+  function onMove(e){
+    if(!mode || e.touches.length!==2) return;
+    e.preventDefault();
+    const d=gap(e.touches[0],e.touches[1]); if(startDist>0) ratio=d/startDist;
+    if(mode==="page"){
+      const vis=Math.max(0.2,Math.min(4,startVal*ratio))/startVal;
+      pagesEl.style.transform="scale("+vis+")";
+    } else {
+      const fs=Math.max(13,Math.min(34,Math.round(startVal*ratio)));
+      if(fs!==(epubPref().fs||19)){ epubSetPref({fs}); mode==="epub"?applyEpubPref():applyLiquidPref(); }
+    }
+  }
+  function onEnd(e){
+    if(!mode) return;
+    if(e.touches && e.touches.length>=2) return;   // one finger lifted, still pinching
+    if(mode==="page"){
+      pagesEl.style.transform=""; pagesEl.style.willChange="";
+      const ns=Math.max(0.2,Math.min(4,startVal*ratio));
+      if(Math.abs(ns-state.scale)>0.01){ state.fitWidth=false; state.scale=ns; updateZoomLabel(); applyScale(); }
+    }
+    mode=null;
+  }
+  ws.addEventListener("touchstart",onStart,{passive:false});
+  ws.addEventListener("touchmove",onMove,{passive:false});
+  ws.addEventListener("touchend",onEnd,{passive:false});
+  ws.addEventListener("touchcancel",onEnd,{passive:false});
 })();
 
 /* ---- Android: open a PDF/EPUB handed in by another app via an intent ---- */
